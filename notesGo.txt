@@ -1,0 +1,23 @@
+
+BACKEND fatto in NodeJs, FRONTEND fatto in react
+
+-package.json: 
+libreoffice-convert : genera link temp x aws S3
+multer: upload docs
+pdfjs-dist: estrae testo da pdf
+mammoth: .docx → testo
+docx: per creare file .docx
+🔥fast-diff: confronto tra testi x differenze
+fast-xml-parser: leggere xml velocemente
+jszip: per creare/leggere i Zip file
+libreoffice-convert: conversione docs PDF ↔ DOCX ↔ altri formati
+resend: inviare email (login, notifiche, ecc.)
+
+-Nixpacks.toml: durante il deploy dice come costruire ambiente server, nixpacks divide il processo di deploy in setup(installa dipendenze di sistema)->install(installa npm packs)->build(compila il prj)->start(avvia il server).
+nixPkgs = ["libreoffice"]  significa installa questi packs dal sistema linux, 'libreoffice' è la open-source suite x Word (Writer)/Excel (Calc)/PowerPoint (Impress).
+LO DEVO FARE XK uso plugin 'libreoffice-convert' che ha bisogno del programma reale installato sul sistema!
+quindi se non installi LibreOffice sulla macchine, le conversioni che fa plugin 'libreoffice-convert' falliscono!
+-
+
+
+
