@@ -24,7 +24,7 @@ export const DEFAULT_MAIN_MODEL = "gemini-3-flash-preview";
 export const DEFAULT_TITLE_MODEL = "gemini-3.1-flash-lite-preview";
 export const DEFAULT_TABULAR_MODEL = "gemini-3-flash-preview";
 
-const ALL_MODELS = new Set<string>([
+const ALL_MODELS = new Set<string>([  //usando Set non puoi avere cloni!!
     ...CLAUDE_MAIN_MODELS,
     ...GEMINI_MAIN_MODELS,
     ...CLAUDE_MID_MODELS,
@@ -42,6 +42,6 @@ export function providerForModel(model: string): Provider {
 }
 
 export function resolveModel(id: string | null | undefined, fallback: string): string {
-    if (id && ALL_MODELS.has(id)) return id;
+    if (id && ALL_MODELS.has(id)) return id;  //has() ritorna true/false in base se esiste il l'id (e.g.GEMINI_LOW_MODELS) nel set
     return fallback;
 }
