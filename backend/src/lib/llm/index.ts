@@ -1,7 +1,7 @@
-import { streamClaude, completeClaudeText } from "./claude";
-import { streamGemini, completeGeminiText } from "./gemini";
-import { providerForModel } from "./models";
-import type { StreamChatParams, StreamChatResult, UserApiKeys } from "./types";
+import { streamClaude, completeClaudeText } from "./claude";  //ur custom here accanto
+import { streamGemini, completeGeminiText } from "./gemini";  //ur custom here accanto
+import { providerForModel } from "./models";   //ur custom here accanto
+import type { StreamChatParams, StreamChatResult, UserApiKeys } from "./types";  //ur custom here accanto
 
 export * from "./types";
 export * from "./models";
@@ -24,4 +24,7 @@ export async function completeText(params: {
     const provider = providerForModel(params.model);
     if (provider === "claude") return completeClaudeText(params);
     return completeGeminiText(params);
+    //penso che sia meglio lo switch qua!
 }
+
+

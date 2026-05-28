@@ -47,10 +47,8 @@ export async function streamGemini(
     const maxIter = params.maxIterations ?? 10;
     const ai = client(apiKeys?.gemini);
     const functionDeclarations = toGeminiTools(tools);
-
     const contents: GeminiContent[] = toNativeContents(params.messages);
     let fullText = "";
-
     for (let iter = 0; iter < maxIter; iter++) {
         const stream = await ai.models.generateContentStream({
             model,
@@ -69,19 +67,16 @@ export async function streamGemini(
                     : { thinkingBudget: 0 },
             },
         });
-
         // Per-iteration accumulators.
         const textParts: string[] = [];
         const callParts: GeminiPart[] = [];
         const toolCalls: NormalizedToolCall[] = [];
         let sawThinking = false;
-
         for await (const chunk of stream) {
             console.log("[gemini stream chunk]", JSON.stringify(chunk, null, 2));
             const parts =
                 (chunk as { candidates?: { content?: { parts?: GeminiPart[] } }[] })
                     .candidates?.[0]?.content?.parts ?? [];
-
             for (const part of parts) {
                 if (part.text) {
                     if (part.thought) {
@@ -106,24 +101,18 @@ export async function streamGemini(
                 }
             }
         }
-
         if (sawThinking) callbacks.onReasoningBlockEnd?.();
-
         fullText += textParts.join("");
-
         if (!toolCalls.length || !runTools) {
             break;
         }
-
         const results = await runTools(toolCalls);
-
         // Append the model's turn (text + functionCall parts, in that order)
         // and the matching functionResponse turn.
         const modelParts: GeminiPart[] = [];
         if (textParts.length) modelParts.push({ text: textParts.join("") });
         for (const cp of callParts) modelParts.push(cp);
         contents.push({ role: "model", parts: modelParts });
-
         contents.push({
             role: "user",
             parts: results.map((r) => {
@@ -140,7 +129,6 @@ export async function streamGemini(
             }),
         });
     }
-
     return { fullText };
 }
 
