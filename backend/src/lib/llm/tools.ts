@@ -10,8 +10,8 @@ export type ClaudeTool = {
 };
 
 //Schema normalization
-//The OpenAI tool schemas in the codebase already use plain JSON-Schema-lite
-//shape. Both Claude and Gemini accept that shape. We only sanitise a couple
+//The OpenAI tool schemas in the codebase already use plain JSON-Schema-lite shape. 
+//Both Claude and Gemini accept that shape. We only sanitise a couple
 //of edge cases: `integer` is accepted by both, but we make sure arrays have
 //`items` and objects have `properties` so Gemini doesn't error.
 function normalizeSchema(schema: unknown): Record<string, unknown> {
@@ -21,10 +21,10 @@ function normalizeSchema(schema: unknown): Record<string, unknown> {
     const s = schema as Record<string, unknown>;
     const type = s.type;
     const out: Record<string, unknown> = { ...s };  //={...s} è l'operatore di spread, copia tutte le proprietà di s in out
-    if (type === "object") {
+    if(type === "object") {
         const props = (s.properties as Record<string, unknown>) ?? {};
         const normProps: Record<string, unknown> = {};
-        for (const [k, v] of Object.entries(props)) {
+        for (const [k, v] of Object.entries(props)) {  //itera per key-value di props
             normProps[k] = normalizeSchema(v);
         }
         out.properties = normProps;
