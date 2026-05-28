@@ -2,26 +2,26 @@
 // Callers always speak OpenAI-style tools + { role, content } messages; each
 // provider translates internally.
 
-export type Provider = "claude" | "gemini";
+export type Provider = "claude" | "gemini";  //permette solo questi 2 
 
 export type OpenAIToolSchema = {
-    type: "function";
-    function: {
+    type: "function";  //stesso stile di openai moderno
+    function: {  //definizione della function
         name: string;
         description: string;
-        parameters: Record<string, unknown>;
+        parameters: Record<string, unknown>;  //la key deve essere str, mentre il value è unknwon
     };
 };
 
 export type LlmMessage = {
-    role: "user" | "assistant";
+    role: "user" | "assistant";  //permette solo questi 2
     content: string;
 };
 
 export type NormalizedToolCall = {
     id: string;
     name: string;
-    input: Record<string, unknown>;
+    input: Record<string, unknown>;  //la key deve essere str, mentre il value è unknwon
 };
 
 export type NormalizedToolResult = {
@@ -33,7 +33,7 @@ export type StreamCallbacks = {
     onReasoningDelta?: (text: string) => void;
     onReasoningBlockEnd?: () => void;
     onContentDelta?: (text: string) => void;
-    onToolCallStart?: (call: NormalizedToolCall) => void;
+    onToolCallStart?: (call: NormalizedToolCall) => void;  //call chiamato quando AI vuole usarla
 };
 
 export type UserApiKeys = {

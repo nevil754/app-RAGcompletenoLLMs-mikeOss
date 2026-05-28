@@ -1,15 +1,13 @@
 import type { OpenAIToolSchema } from "./types";
 
-// ---------------------------------------------------------------------------
 // Tool-schema adapters
-// ---------------------------------------------------------------------------
 // Callers hand us OpenAI-style tool definitions. Provider-specific converters
 // live here so the rest of the code never has to think about it.
 
 export type ClaudeTool = {
     name: string;
     description: string;
-    input_schema: Record<string, unknown>;
+    input_schema: Record<string, unknown>;  //la key deve essere str, mentre il value è unknwon
 };
 
 export function toClaudeTools(tools: OpenAIToolSchema[]): ClaudeTool[] {
@@ -23,7 +21,7 @@ export function toClaudeTools(tools: OpenAIToolSchema[]): ClaudeTool[] {
 export type GeminiFunctionDeclaration = {
     name: string;
     description: string;
-    parameters?: Record<string, unknown>;
+    parameters?: Record<string, unknown>;  //la key deve essere str, mentre il value è unknwon
 };
 
 export function toGeminiTools(tools: OpenAIToolSchema[]): GeminiFunctionDeclaration[] {
@@ -43,9 +41,7 @@ export function toGeminiTools(tools: OpenAIToolSchema[]): GeminiFunctionDeclarat
     });
 }
 
-// ---------------------------------------------------------------------------
 // Schema normalization
-// ---------------------------------------------------------------------------
 // The OpenAI tool schemas in the codebase already use plain JSON-Schema-lite
 // shape. Both Claude and Gemini accept that shape. We only sanitise a couple
 // of edge cases: `integer` is accepted by both, but we make sure arrays have
