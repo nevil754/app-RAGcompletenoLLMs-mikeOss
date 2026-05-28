@@ -20,8 +20,7 @@ function normalizeSchema(schema: unknown): Record<string, unknown> {
     }
     const s = schema as Record<string, unknown>;
     const type = s.type;
-    const out: Record<string, unknown> = { ...s };
-
+    const out: Record<string, unknown> = { ...s };  //={...s} è l'operatore di spread, copia tutte le proprietà di s in out
     if (type === "object") {
         const props = (s.properties as Record<string, unknown>) ?? {};
         const normProps: Record<string, unknown> = {};
