@@ -1,5 +1,6 @@
 # Mike
 
+demo video complete at https://mikeoss.com/
 Open-source release containing the Mike frontend and backend.
 
 ## Contents
