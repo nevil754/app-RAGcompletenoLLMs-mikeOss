@@ -1,0 +1,30 @@
+//original file di settings x i models è backend/src/lib/llm/models.ts
+
+llm:
+  provider: "openai"
+  models:
+    main: "gpt-5-mini"
+    mid: "gpt-5-nano"
+    low: "gpt-4.1-nano"
+  default: "main"
+
+embeddings:
+  provider: "openai"
+  model: "text-embedding-3-small"
+
+splitter:
+  chunk_size: 1000
+  chunk_overlap: 200
+  strategy: "markdown"
+
+retriever:
+  search_type: "hybrid"
+  top_k: 3
+  strategy: "mmr"
+
+vectorstore:
+  collection_name: "mike-rag"
+  url: "http://localhost:6333"
+
+logging:
+  level: "INFO"
