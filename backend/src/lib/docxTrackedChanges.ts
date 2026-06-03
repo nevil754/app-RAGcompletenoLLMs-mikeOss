@@ -30,10 +30,11 @@ import fastDiff from "fast-diff";  //x calcolare differenze tra stringhe, usato 
 // backslash variant for both reads and writes.
 
 function getZipEntry(zip: JSZip, pathSlash: string) {
-    const direct = zip.file(pathSlash);
+    const direct = zip.file(pathSlash);  //
     if (direct) return direct;
-    return zip.file(pathSlash.replace(/\//g, "\\"));
+    return zip.file(pathSlash.replace(/\//g, "\\"));   //
 }
+//alcuni docx vecchi usano \ invece di / come separatore di path. here aggiustiamo e settiamo sempre a / ma se non troviamo il file con / allora proviamo con \, così supportiamo entrambi i formati senza doverci preoccupare di quale sia usato nell'archivio zip del docx
 
 function setZipEntry(
     zip: JSZip,
