@@ -43,7 +43,7 @@ export async function checkProjectAccess(
         id: string;
         user_id: string;
         shared_with: string[] | null;
-    };
+    };  //project che arriva da supabse puo essere unknwon/any/Record<string, unknown> quindi here dici a ts di supperre che abbia questa struttura cosi puoi accedere e.g. project.user_id
     if (proj.user_id === userId) {
         return { ok: true, isOwner: true, project: proj };
     }
@@ -131,16 +131,16 @@ export async function listAccessibleProjectIds(
 ): Promise<string[]> {
     const [{ data: own }, { data: shared }] = await Promise.all([
         db.from("projects").select("id").eq("user_id", userId),
-        userEmail
-            ? db
+        userEmail ?
+                db
                   .from("projects")
                   .select("id")
                   .contains("shared_with", [userEmail])
-                  .neq("user_id", userId)
-            : Promise.resolve({ data: [] as { id: string }[] }),
+                  .neq("user_id", userId)  //neq() per escludere progetti di cui è owner, altrimenti avrei doppioni 
+            : Promise.resolve({ data: [] as { id: string }[] }),  //resolve() 
     ]);
     const ids = new Set<string>();
-    for (const p of (own ?? []) as { id: string }[]) ids.add(p.id);
-    for (const p of (shared ?? []) as { id: string }[]) ids.add(p.id);
+    for (const p of (own ?? []) as { id: string }[])  ids.add(p.id);  //iterazione sugli elems dell'array usando for...of
+    for (const p of (shared ?? []) as { id: string }[])  ids.add(p.id);  //iterazione sugli elems dell'array usando for...of
     return [...ids];
 }
