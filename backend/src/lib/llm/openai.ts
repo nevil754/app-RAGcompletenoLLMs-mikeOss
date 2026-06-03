@@ -25,6 +25,16 @@ type NativeMessage = {
 
 const MAX_TOKENS = 16384;
 
+import { BaseChatModel } from "@langchain/core/language_models/chat_models";
+export function client(override?: string | null): BaseChatModel {
+    const apikey = override?.trim() || process.env.OPENAI_API_KEY || "";
+    return new BaseChatModel({apiKey});
+};
 
+function toNativeMessages(
+    messages: StreamChatParams["messages"],
+): NativeMessage[] {
+    return messages.map((m) => ({ role:m.role, content:m.content }) );
+}
 
 
