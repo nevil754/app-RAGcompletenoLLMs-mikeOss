@@ -17,6 +17,7 @@ resend: inviare email (login, notifiche, ecc.)
 nixPkgs = ["libreoffice"]  significa installa questi packs dal sistema linux, 'libreoffice' è la open-source suite x Word (Writer)/Excel (Calc)/PowerPoint (Impress).
 LO DEVO FARE XK uso plugin 'libreoffice-convert' che ha bisogno del programma reale installato sul sistema!
 quindi se non installi LibreOffice sulla macchine, le conversioni che fa plugin 'libreoffice-convert' falliscono!
+
 -
 
 

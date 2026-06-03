@@ -3,11 +3,7 @@ import type { OpenAIToolSchema } from "./types";
 // Tool-schema adapters
 // Callers hand us OpenAI-style tool definitions! here convert into provide style of Gemini and Claude
 
-export type ClaudeTool = {
-    name: string;
-    description: string;
-    input_schema: Record<string, unknown>;  //la key deve essere str, mentre il value è unknwon
-};
+
 
 //Schema normalization
 //The OpenAI tool schemas in the codebase already use plain JSON-Schema-lite shape. 
@@ -20,7 +16,7 @@ function normalizeSchema(schema: unknown): Record<string, unknown> {
     }
     const s = schema as Record<string, unknown>;
     const type = s.type;
-    const out: Record<string, unknown> = { ...s };  //={...s} è l'operatore di spread, copia tutte le proprietà di s in out
+    const out: Record<string, unknown> = { ...s };   //={...s} è l'operatore di spread, copia tutte le proprietà di s in out
     if(type === "object") {
         const props = (s.properties as Record<string, unknown>) ?? {};
         const normProps: Record<string, unknown> = {};
@@ -35,6 +31,29 @@ function normalizeSchema(schema: unknown): Record<string, unknown> {
     return out;
 }
 
+//openai
+export type OpenAITool = {
+    name: string;
+    description: string;
+    parameters?: Record<string, unknown>;
+}
+
+export function toOpenAITools(tools: OpenAIToolSchema[]): OpenAITool[] {
+    return tools.map((t) => ({
+        name: t.function.name, 
+        description: t.function.description,
+        parameters: normalizeSchema(t.function.parameters),
+    }))
+}
+
+
+//--claude
+export type ClaudeTool = {
+    name: string;
+    description: string;
+    input_schema: Record<string, unknown>;  //la key deve essere str, mentre il value è unknwon
+};
+
 export function toClaudeTools(tools: OpenAIToolSchema[]): ClaudeTool[] {   //prende in input un'array di type OpenAIToolSchema
     return tools.map((t) => ({  //per ciascun elemento dell'array...
         name: t.function.name,
@@ -43,6 +62,7 @@ export function toClaudeTools(tools: OpenAIToolSchema[]): ClaudeTool[] {   //pre
     }));
 }
 
+//--gemini
 export type GeminiFunctionDeclaration = {
     name: string;
     description: string;

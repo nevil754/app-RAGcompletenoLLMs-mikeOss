@@ -20,7 +20,7 @@ app.use(
   }),
 );
 
-app.use(express.json({ limit: "50mb" }));
+app.use(express.json({ limit: "50mb" }));   //legge il body della req e lo rende disponibile in req.body ,dimensione max 50mb
 
 app.use("/chat", chatRouter);
 app.use("/projects", projectsRouter);

@@ -2,7 +2,7 @@
 // Callers always speak OpenAI-style tools + { role, content } messages; each
 // provider translates internally.
 
-export type Provider = "claude" | "gemini";  //permette solo questi 2 
+export type Provider = "claude" | "gemini" | "openai";  //permette solo questi 2, magari pero pero io uso Openai api!!
 
 export type OpenAIToolSchema = {
     type: "function";  //stesso stile di openai moderno
