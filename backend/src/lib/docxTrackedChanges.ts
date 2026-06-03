@@ -14,9 +14,9 @@
  * (accepting that insertion) before the new change is emitted.
  */
 
-import JSZip from "jszip";
-import { XMLParser, XMLBuilder } from "fast-xml-parser";
-import fastDiff from "fast-diff";
+import JSZip from "jszip";  //x leggere e manipolare file ZIP
+import { XMLParser, XMLBuilder } from "fast-xml-parser";  //x convertire XML in oggetti JS e viceversa, cmnq maybe non il best
+import fastDiff from "fast-diff";  //x calcolare differenze tra stringhe, usato per capire cosa è stato cancellato e cosa è stato inserito in un edit
 
 // ---------------------------------------------------------------------------
 // JSZip path helpers
