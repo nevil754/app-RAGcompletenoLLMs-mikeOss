@@ -14,7 +14,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
-} from "@aws-sdk/client-s3";
+} from "@aws-sdk/client-s3";  //client S3 ufficiale AWS SDK v3
 import { getSignedUrl as awsGetSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 function getClient(): S3Client {
@@ -36,10 +36,7 @@ export const storageEnabled = Boolean(
   process.env.R2_SECRET_ACCESS_KEY,
 );
 
-// ---------------------------------------------------------------------------
-// Upload
-// ---------------------------------------------------------------------------
-
+//Upload
 export async function uploadFile(
   key: string,
   content: ArrayBuffer,
@@ -56,10 +53,7 @@ export async function uploadFile(
   );
 }
 
-// ---------------------------------------------------------------------------
-// Download
-// ---------------------------------------------------------------------------
-
+//download
 export async function downloadFile(key: string): Promise<ArrayBuffer | null> {
   if (!storageEnabled) return null;
   try {
@@ -75,20 +69,14 @@ export async function downloadFile(key: string): Promise<ArrayBuffer | null> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Delete
-// ---------------------------------------------------------------------------
-
+//delete
 export async function deleteFile(key: string): Promise<void> {
   if (!storageEnabled) return;
   const client = getClient();
   await client.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
 }
 
-// ---------------------------------------------------------------------------
-// Signed URL (pre-signed for temporary direct access)
-// ---------------------------------------------------------------------------
-
+//Signed URL (🔥 pre-signed  technique for temporary direct access)
 export async function getSignedUrl(
   key: string,
   expiresIn = 3600,
@@ -140,10 +128,7 @@ export function buildContentDisposition(
   return `${kind}; filename="${sanitizeDispositionFilename(normalized)}"; filename*=UTF-8''${encodeRFC5987(normalized)}`;
 }
 
-// ---------------------------------------------------------------------------
-// Storage key helpers
-// ---------------------------------------------------------------------------
-
+//Storage key helpers
 export function storageKey(
   userId: string,
   docId: string,
