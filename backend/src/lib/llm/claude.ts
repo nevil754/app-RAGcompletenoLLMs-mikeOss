@@ -61,6 +61,7 @@ export async function streamClaude(
     const messages: NativeMessage[] = toNativeMessages(params.messages);  //converti messaggi in formato Anthropic
     let fullText = "";
     for (let iter=0; iter<maxIter; iter++) {
+        //crei OBJ CHE EMETTE EVENTI NEL TEMPO 
         const stream = anthropic.messages.stream({  //stream() CHIAMA ANTROPHIC IN STREAMING MODE, PASSANDO QUESTI PARAMETRI
             model,
             system: systemPrompt,
@@ -82,12 +83,13 @@ export async function streamClaude(
             // Extended thinking requires temperature to be default (omitted).
         });
         let sawThinking = false;  
-        stream.on("streamEvent", (event) => {   //riceve ogni chunck raw dallo stream e lo salva su file log
+        //stream è quello che hai creato tu here qua sopra, E' UN OBJ CHE EMETTE EVENTI NEL TEMPO
+        stream.on("streamEvent", (event) => {   //quando in obj 'stream' arriva evento chiamato 'streamEvent' ALLORA ESEGUI QUESTO: this riceve ogni chunck raw dallo stream e lo salva su file log
             const line = JSON.stringify(event);
             console.log("[claude raw stream]", line);
             fs.appendFile(RAW_STREAM_LOG_PATH, line + "\n", () => {});  //salva log su file
         });
-        stream.on("text", (delta) => {
+        stream.on("text", (delta) => {  //ogni pezzo di testo mentre arriva 
             callbacks.onContentDelta?.(delta);
         });
         if (enableThinking) {
