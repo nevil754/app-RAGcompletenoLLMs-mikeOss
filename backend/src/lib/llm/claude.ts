@@ -60,7 +60,7 @@ export async function streamClaude(
     const claudeTools = toClaudeTools(tools);  //converti tools in formato Anthropic
     const messages: NativeMessage[] = toNativeMessages(params.messages);  //converti messaggi in formato Anthropic
     let fullText = "";
-    for (let iter=0; iter<maxIter; iter++) {
+    for (let iter=0; iter<maxIter; iter++) {  //!!PER EVITARE LOOP INFINITI, e.g. toolA -> toolB -> toolC -> toolB -> toolA -> toolC 
         //crei OBJ CHE EMETTE EVENTI NEL TEMPO 
         const stream = anthropic.messages.stream({  //stream() CHIAMA ANTROPHIC IN STREAMING MODE, PASSANDO QUESTI PARAMETRI
             model,
@@ -110,7 +110,8 @@ export async function streamClaude(
             if (block.type === "text") {
                 const txt = (block as { text: string }).text;
                 if (typeof txt === "string") fullText += txt;
-            } else if (block.type === "tool_use") {
+            }   //se il blocco è di tipo 'text' allora aggiunge al fullText
+            else if (block.type === "tool_use") {
                 const tu = block as {
                     id: string;
                     name: string;
@@ -123,16 +124,16 @@ export async function streamClaude(
                 };
                 callbacks.onToolCallStart?.(call);
                 toolCalls.push(call);
-            }
+            }  //se il blocco è di tipo 'tool_use' allora lo aggiungo a lista toolCalls
         }
         if (stopReason !== "tool_use" || !toolCalls.length || !runTools) {
             break;
         }
         const results = await runTools(toolCalls);
 
-        // Record the assistant turn (preserving the original content blocks,
-        // which Claude requires on the follow-up) and the user turn that
-        // carries the tool_result blocks.
+        //Record the assistant turn (preserving the original content blocks,
+        //which Claude requires on the follow-up) and the user turn that
+        //carries the tool_result blocks.
         messages.push({ role: "assistant", content: assistantBlocks });
         messages.push({
             role: "user",

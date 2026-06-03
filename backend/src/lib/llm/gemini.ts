@@ -8,10 +8,14 @@ import { toGeminiTools } from "./tools";
 
 type GeminiPart = {
     text?: string;
-    // Set by Gemini when the text content is a thought summary rather than
-    // final-answer prose. Requires `thinkingConfig.includeThoughts: true`.
+    //Set by Gemini when the text content is a thought summary rather than
+    //final-answer prose. Requires `thinkingConfig.includeThoughts: true`.
     thought?: boolean;
-    functionCall?: { id?: string; name: string; args?: Record<string, unknown> };
+    functionCall?: { 
+        id?: string; 
+        name: string; 
+        args?: Record<string, unknown> 
+    };
     functionResponse?: {
         id?: string;
         name: string;
@@ -39,11 +43,25 @@ function toNativeContents(messages: StreamChatParams["messages"]): GeminiContent
         parts: [{ text: m.content }],
     }));
 }
+//e.g.
+// {
+//     role: "user",
+//     content: "Cos'è Node.js?"
+// }
+//diventa 
+// {
+//     role: "user",
+//     parts: [
+//         {
+//             text: "Cos'è Node.js?"
+//         }
+//     ]
+// }
 
 export async function streamGemini(
     params: StreamChatParams,
 ): Promise<StreamChatResult> {
-    const { model, systemPrompt, tools = [], callbacks = {}, runTools, apiKeys, enableThinking } = params;
+    const { model, systemPrompt, tools = [], callbacks = {}, runTools, apiKeys, enableThinking } = params;  //unpack
     const maxIter = params.maxIterations ?? 10;
     const ai = client(apiKeys?.gemini);
     const functionDeclarations = toGeminiTools(tools);
