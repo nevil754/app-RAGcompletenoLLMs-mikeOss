@@ -21,15 +21,12 @@ export async function getUserIdFromRequest(req: Request): Promise<string> {
       status: 401,
     });
   }
-  const token = auth.slice(7).trim();
-
+  const token = auth.slice(7).trim();  //7 è la lunghezza di "Bearer "
   const supabaseUrl = process.env.SUPABASE_URL || "";
   const serviceKey = process.env.SUPABASE_SECRET_KEY || "";
-
   if (!supabaseUrl || !serviceKey) {
     throw new Response("Server auth is not configured", { status: 500 });
   }
-
   const admin = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false },
   });
@@ -39,3 +36,5 @@ export async function getUserIdFromRequest(req: Request): Promise<string> {
   }
   return data.user.id;
 }
+
+
