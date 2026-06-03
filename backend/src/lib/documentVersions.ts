@@ -1,5 +1,8 @@
 import type { createServerSupabase } from "./supabase";
 
+//Questo file è un layer di “data enrichment” sopra Supabase: prende documenti e “attacca” informazioni aggiuntive sulle versioni (storage path, pdf, versioni latest, ecc.).
+
+
 type Supa = ReturnType<typeof createServerSupabase>;
 
 interface DocRow {
