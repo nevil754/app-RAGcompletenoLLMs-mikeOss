@@ -2,7 +2,7 @@
 
 llm:
   provider: "openai"
-  models:
+  model:
     main: "gpt-5-mini"
     mid: "gpt-5-nano"
     low: "gpt-4.1-nano"

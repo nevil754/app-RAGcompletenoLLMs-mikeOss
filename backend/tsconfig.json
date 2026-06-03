@@ -5,7 +5,7 @@
     "moduleResolution": "node",  //come ts trova i files, node è il piu comune
     "ignoreDeprecations": "5.0",  //non mostra warning vecchi fino alla versione 5.0
     "outDir": "./dist",   //dove viene messo il code compilato
-    "rootDir": "./src",   //cartella code sorgente
+    "rootDir": "./src",   //DIR CARTELLA CODE SORGENTE, e.g. un file al di fuori se usi 'process.env' ti dara errore xk non riesce a leggerlo
     "strict": true,   //mode ts rigida per evitare errori
     "esModuleInterop": true,  //migliora compatibilita CommonJS (usa 'require') <--> ES Modules (usa 'import')(è il piu nuovo x import/export packs)  
     "skipLibCheck": true,   //salta il controllo dei tipi delle librerie esterne, speed compilation
