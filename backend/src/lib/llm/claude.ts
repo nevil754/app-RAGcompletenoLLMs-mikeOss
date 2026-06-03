@@ -70,26 +70,23 @@ export async function streamClaude(
                 (claudeTools as unknown as Tool[])  //doppia conversione, xk ts non ti lascia direttamente fare claudeTools as Tool[]
                 : undefined,
             max_tokens: MAX_TOKENS,
-            // Claude 4.x models require `thinking.type: "adaptive"` and
-            // drive effort via `output_config.effort` rather than a fixed
-            // token budget. We only opt in when the caller requested it.
-            ...(enableThinking
+            //Claude 4.x models require `thinking.type: "adaptive"` and
+            //drive effort via `output_config.effort` rather than a fixed
+            //token budget. We only opt in when the caller requested it.
+            ...(enableThinking   //se questo è true, allora attiva (settando sul client Antrophic) thinking & output_config ch
                 ? ({
                       thinking: { type: "adaptive" },
                       output_config: { effort: "high" },
-                  } as unknown as Record<string, unknown>)
+                  } as unknown as Record<string, unknown>)  //doppia conversione, xk ts non ti lascia direttamente fare questo oggetto come Record<string, unknown>
                 : {}),
             // Extended thinking requires temperature to be default (omitted).
         });
-
-        let sawThinking = false;
-
-        stream.on("streamEvent", (event) => {
+        let sawThinking = false;  
+        stream.on("streamEvent", (event) => {   //riceve ogni chunck raw dallo stream e lo salva su file log
             const line = JSON.stringify(event);
             console.log("[claude raw stream]", line);
-            fs.appendFile(RAW_STREAM_LOG_PATH, line + "\n", () => {});
+            fs.appendFile(RAW_STREAM_LOG_PATH, line + "\n", () => {});  //salva log su file
         });
-
         stream.on("text", (delta) => {
             callbacks.onContentDelta?.(delta);
         });
@@ -99,7 +96,6 @@ export async function streamClaude(
                 callbacks.onReasoningDelta?.(delta);
             });
         }
-
         const final = await stream.finalMessage();
         if (sawThinking) callbacks.onReasoningBlockEnd?.();
         const stopReason = final.stop_reason;
@@ -127,11 +123,9 @@ export async function streamClaude(
                 toolCalls.push(call);
             }
         }
-
         if (stopReason !== "tool_use" || !toolCalls.length || !runTools) {
             break;
         }
-
         const results = await runTools(toolCalls);
 
         // Record the assistant turn (preserving the original content blocks,
@@ -147,7 +141,6 @@ export async function streamClaude(
             })),
         });
     }
-
     return { fullText };
 }
 
