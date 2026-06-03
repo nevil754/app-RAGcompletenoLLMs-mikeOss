@@ -89,16 +89,16 @@ export async function streamClaude(
             console.log("[claude raw stream]", line);
             fs.appendFile(RAW_STREAM_LOG_PATH, line + "\n", () => {});  //salva log su file
         });
-        stream.on("text", (delta) => {  //ogni pezzo di testo mentre arriva 
+        stream.on("text", (delta) => {  //quando obj 'stream' cattura evento chiamato 'text' allora runna this
             callbacks.onContentDelta?.(delta);
         });
         if (enableThinking) {
-            stream.on("thinking", (delta) => {
-                sawThinking = true;
+            stream.on("thinking", (delta) => {   //quando obj 'stream' cattura evento chiamato 'thinking' allora runna this
+                sawThinking = true;   //flag a true, serve in row 102
                 callbacks.onReasoningDelta?.(delta);
             });
         }
-        const final = await stream.finalMessage();
+        const final = await stream.finalMessage();   //aspetta risposta finale completa
         if (sawThinking) callbacks.onReasoningBlockEnd?.();
         const stopReason = final.stop_reason;
         const assistantBlocks = final.content as ContentBlock[];
