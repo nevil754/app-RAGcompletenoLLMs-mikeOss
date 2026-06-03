@@ -3,8 +3,6 @@ import type { OpenAIToolSchema } from "./types";
 // Tool-schema adapters
 // Callers hand us OpenAI-style tool definitions! here convert into provide style of Gemini and Claude
 
-
-
 //Schema normalization
 //The OpenAI tool schemas in the codebase already use plain JSON-Schema-lite shape. 
 //Both Claude and Gemini accept that shape. We only sanitise a couple
@@ -31,7 +29,7 @@ function normalizeSchema(schema: unknown): Record<string, unknown> {
     return out;
 }
 
-//openai
+//--openai, io uso openai!
 export type OpenAITool = {
     name: string;
     description: string;
