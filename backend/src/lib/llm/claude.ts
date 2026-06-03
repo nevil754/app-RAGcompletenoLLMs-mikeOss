@@ -1,28 +1,33 @@
-import Anthropic from "@anthropic-ai/sdk";
-import type { Tool } from "@anthropic-ai/sdk/resources/messages/messages";
-import * as fs from "fs";
-import * as path from "path";
+import Anthropic from "@anthropic-ai/sdk";   //client ufficiale antrophic
+import type { Tool } from "@anthropic-ai/sdk/resources/messages/messages";  //tipo ts per descrivere i tools
+import * as fs from "fs";  //x leggere read filesystem
+import * as path from "path";  //x paths 
 import type {
     StreamChatParams,
     StreamChatResult,
     NormalizedToolCall,
     NormalizedToolResult,
 } from "./types";
-import { toClaudeTools } from "./tools";
+import { toClaudeTools } from "./tools";  
 
-const RAW_STREAM_LOG_PATH = path.resolve(
-    process.cwd(),
+const RAW_STREAM_LOG_PATH = path.resolve(  //resolve() x concatenare
+    process.cwd(),  //path di partenza (da parte il comando nodejs)
     "claude-raw-stream.log",
 );
 
 type ContentBlock =
-    | { type: "text"; text: string }
+     { type: "text"; text: string }  
     | { type: "tool_use"; id: string; name: string; input: unknown }
     | { type: string; [key: string]: unknown };
+//e.g.
+//{
+//   type: "text",
+//   text: "hello"
+//}
 
 type NativeMessage = {
     role: "user" | "assistant";
-    content: string | ContentBlock[];
+    content: string | ContentBlock[];  //testo o blocchi strutturati
 };
 
 const MAX_TOKENS = 16384;
@@ -30,13 +35,13 @@ const MAX_TOKENS = 16384;
 function client(override?: string | null): Anthropic {
     const apiKey = override?.trim() || process.env.ANTHROPIC_API_KEY || "";
     return new Anthropic({ apiKey });
-}
+}  //crea un client di Anthropic usando la chiave API fornita o quella nelle variabili d'ambiente
 
 function toNativeMessages(
-    messages: StreamChatParams["messages"],
+    messages: StreamChatParams["messages"],  //estrai solo i mex in un array
 ): NativeMessage[] {
     return messages.map((m) => ({ role: m.role, content: m.content }));
-}
+}  //convert messaggi interni in formato Anthropic
 
 export async function streamClaude(
     params: StreamChatParams,
@@ -50,20 +55,19 @@ export async function streamClaude(
         apiKeys,
         enableThinking,
     } = params;
-    const maxIter = params.maxIterations ?? 10;
-    const anthropic = client(apiKeys?.claude);
-    const claudeTools = toClaudeTools(tools);
-
-    const messages: NativeMessage[] = toNativeMessages(params.messages);
+    const maxIter = params.maxIterations ?? 10;  //di default è 10
+    const anthropic = client(apiKeys?.claude);  //get
+    const claudeTools = toClaudeTools(tools);  //converti tools in formato Anthropic
+    const messages: NativeMessage[] = toNativeMessages(params.messages);  //converti messaggi in formato Anthropic
     let fullText = "";
-
-    for (let iter = 0; iter < maxIter; iter++) {
-        const stream = anthropic.messages.stream({
+    for (let iter=0; iter<maxIter; iter++) {
+        const stream = anthropic.messages.stream({  //stream() CHIAMA ANTROPHIC IN STREAMING MODE, PASSANDO QUESTI PARAMETRI
             model,
             system: systemPrompt,
             messages: messages as Anthropic.MessageParam[],
             tools: claudeTools.length
-                ? (claudeTools as unknown as Tool[])
+                ? 
+                (claudeTools as unknown as Tool[])  //doppia conversione, xk ts non ti lascia direttamente fare claudeTools as Tool[]
                 : undefined,
             max_tokens: MAX_TOKENS,
             // Claude 4.x models require `thinking.type: "adaptive"` and

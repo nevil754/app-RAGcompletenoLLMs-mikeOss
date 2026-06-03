@@ -58,7 +58,7 @@ export function toClaudeTools(tools: OpenAIToolSchema[]): ClaudeTool[] {   //pre
         description: t.function.description,
         input_schema: normalizeSchema(t.function.parameters),  //🔥🔥NORMALIZZA SCHEMA PRIMA DI INVIARLO
     }));
-}
+}  //converte gli strumenti in formato OpenAI in strumenti in formato Claude, normalizzando lo schema dei parametri per evitare errori di Gemini!
 
 //--gemini
 export type GeminiFunctionDeclaration = {
