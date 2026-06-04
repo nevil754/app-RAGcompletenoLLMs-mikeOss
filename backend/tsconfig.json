@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2022",  //js recente
     "module": "CommonJS",  //nodejs classico
-    "moduleResolution": "node",  //come ts trova i files, node è il piu comune
+    "moduleResolution": "node10",  //come ts trova i files, node è il piu comune
     "ignoreDeprecations": "5.0",  //non mostra warning vecchi fino alla versione 5.0
     "outDir": "./dist",   //dove viene messo il code compilato
     "rootDir": "./src",   //DIR CARTELLA CODE SORGENTE, e.g. un file al di fuori se usi 'process.env' ti dara errore xk non riesce a leggerlo
