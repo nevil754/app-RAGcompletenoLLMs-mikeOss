@@ -36,3 +36,14 @@ export async function get_llm() : Promise<BaseChatModel> {
     });
 }
 
+export function getMainModel(): string {
+    return loadConfig().llm.model.main;
+}
+
+export function getMidModel(): string {
+    return loadConfig().llm.model.mid;
+}
+
+export function getLowModel(): string {
+    return loadConfig().llm.model.low;
+}
