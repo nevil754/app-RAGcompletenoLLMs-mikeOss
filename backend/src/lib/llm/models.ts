@@ -56,6 +56,6 @@ export function providerForModel(model: string): Provider {
 export function resolveModel(id: string | null | undefined, fallback: string): string {
     if (id && ALL_MODELS.has(id)) return id;  
     return fallback;
-}  //has() ritorna true/false in base se esiste il l'id (e.g.OPENAI_MID_MODELS) nel set
+}  //has() ritorna true/false in base se esiste il l'id (e.g.OPENAI_MID_MODELS) nel Set
 
 

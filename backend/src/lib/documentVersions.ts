@@ -90,12 +90,12 @@ export async function attachActiveVersionPaths<T extends VersionPathRow>(
             d.storage_path = null;
             d.pdf_storage_path = null;
         }
-        return docs;
+        return docs;  
     }
     const { data: rows } = await db
         .from("document_versions")
         .select("id, storage_path, pdf_storage_path, version_number")
-        .in("id", versionIds);
+        .in("id", versionIds);  //versionIds è un array
     const byId = new Map<
         string,
         {

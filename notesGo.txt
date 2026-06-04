@@ -25,4 +25,9 @@ quindi se non installi LibreOffice sulla macchine, le conversioni che fa plugin 
     };
 e.g.project arriva da supabase e ts lo vede come unknown/any/Record<string, unknown>, pero cosi dici a ts di assumere che 'project' abbia questa struttura (quindi ora ts ti lascia fare e.g.project.user_id)
 - ||(or logico, e.g. se il primo non c'è prendi il secondo) e |(or bitwise, e.g. 5 | 3)
-
+-  content: ArrayBuffer  //array di byte del file da caricare
+      Body: Buffer.from(content),  //🔥Buffer.from() converte un ArrayBuffer in un Buffer, che è il formato richiesto da PutObjectCommand per il corpo del file
+- per donwload di files (e.g. pdf) dal backend NON usare SSE(quello è perfetto x stream di tokens), ma usa invece conversione in bytes
+e.g.
+    const bytes = await response.Body.transformToByteArray();  //transformToByteArray() trasforma in array di bytes, piu facile x js da gestire
+    return bytes.buffer as ArrayBuffer;  //ritorna solo la parte di ArrayBuffer dell'oggetto bytes, che è un Uint8Array (un tipo di array di byte), e lo casta come ArrayBuffer

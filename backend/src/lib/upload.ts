@@ -1,10 +1,10 @@
-import type { RequestHandler } from "express";   
-import multer from "multer";
+import type { RequestHandler } from "express";   //RequestHandler è middleware, cmnq qua importiamo solo il type NON l'esecuzione vera e propria 
+import multer from "multer";  //middleware for handling multipart/form-data 
 
-export const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024;
+export const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024;  //104.857.600 byte
 export const MAX_UPLOAD_SIZE_MB = Math.round(
   MAX_UPLOAD_SIZE_BYTES / (1024 * 1024),
-);
+);  //only x render x user il 100 MB limit
 
 const memoryUpload = multer({
   storage: multer.memoryStorage(),
@@ -16,10 +16,9 @@ const memoryUpload = multer({
 
 export function singleFileUpload(fieldName: string): RequestHandler {
   return (req, res, next) => {
-    memoryUpload.single(fieldName)(req, res, (err) => {
-      if (!err) return next();
-
-      if (err instanceof multer.MulterError) {
+    memoryUpload.single(fieldName)(req, res, (err) => {  //single() per un singolo file
+      if (!err) return next();  //continua con la pipeline di middlewares. multer ha processato il file correttamente senza errori
+      if (err instanceof multer.MulterError) {  //error condition
         if (err.code === "LIMIT_FILE_SIZE") {
           return void res.status(413).json({
             detail: `File too large. Maximum size is ${MAX_UPLOAD_SIZE_MB} MB.`,
@@ -29,8 +28,7 @@ export function singleFileUpload(fieldName: string): RequestHandler {
           detail: `Upload failed: ${err.message}`,
         });
       }
-
-      return next(err);
+      return next(err);  //passa l'error catturato al next della pipeline
     });
   };
 }

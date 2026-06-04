@@ -19,7 +19,7 @@ function getSecret(): string {
 
 function b64urlEncode(buf: Buffer): string {  
     return buf
-        .toString("base64")   //converte buffer -> stringa base64
+        .toString("base64")   //🔥converte buffer -> stringa base64
         .replace(/\+/g, "-")  //replace x safe
         .replace(/\//g, "_")  //replace x safe
         .replace(/=+$/g, ""); //replace x safe (rimuove padding)
@@ -34,11 +34,11 @@ function b64urlDecode(s: string): Buffer {  //decodifica stringa base64 "URL saf
 function timingSafeEqStr(a: string, b: string): boolean {  //confronto sicuro nel tempo tra stringhe
     if (a.length !== b.length) return false;
     return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));  //confronta in modo sicuro nel tempo, prevenendo attacchi di tipo timing attack 🔥
-}
+}  //return true/false
 
 export function signDownload(path: string, filename: string): string {
-    const payload = JSON.stringify({ p: path, f: filename });  //json.stringify obj js in stringa json
-    const enc = b64urlEncode(Buffer.from(payload, "utf8"));  
+    const payload = JSON.stringify({ p: path, f: filename });  //🔥 json.stringify CONVERTE obj js -> stringa json
+    const enc = b64urlEncode(Buffer.from(payload, "utf8"));  //converte la stringa json in un Buffer usando codifica utf8, poi la codifica in base64 "URL safe" usando b64urlEncode
     const sig = crypto
         .createHmac("sha256", getSecret())
         .update(enc)
