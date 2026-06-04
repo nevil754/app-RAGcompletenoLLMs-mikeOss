@@ -64,7 +64,6 @@ documentsRouter.delete("/:documentId", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const { documentId } = req.params;
   const db = createServerSupabase();
-
   const { data: doc, error } = await db
     .from("documents")
     .select("id")
@@ -73,7 +72,6 @@ documentsRouter.delete("/:documentId", requireAuth, async (req, res) => {
     .single();
   if (error || !doc)
     return void res.status(404).json({ detail: "Document not found" });
-
   // Storage now lives on document_versions — fan out and delete each
   // version's bytes (DOCX + PDF rendition) before dropping rows.
   const { data: versions } = await db
@@ -101,7 +99,6 @@ documentsRouter.get("/:documentId/display", requireAuth, async (req, res) => {
   const versionIdParam =
     typeof req.query.version_id === "string" ? req.query.version_id : null;
   const db = createServerSupabase();
-
   const { data: doc } = await db
     .from("documents")
     .select("id, filename, file_type, user_id, project_id")
@@ -112,14 +109,11 @@ documentsRouter.get("/:documentId/display", requireAuth, async (req, res) => {
   const access = await ensureDocAccess(doc, userId, userEmail, db);
   if (!access.ok)
     return void res.status(404).json({ detail: "Document not found" });
-
   const active = await loadActiveVersion(documentId, db, versionIdParam);
   if (!active)
     return void res.status(404).json({ detail: "No file available" });
-
   const fileType = (doc.file_type as string) ?? "";
   const isDocx = fileType === "docx" || fileType === "doc";
-
   // For DOCX, prefer the per-version PDF rendition if one exists.
   const servePath =
     isDocx && active.pdf_storage_path
@@ -130,7 +124,6 @@ documentsRouter.get("/:documentId/display", requireAuth, async (req, res) => {
     return void res
       .status(404)
       .json({ detail: "Document not found in storage" });
-
   if (fileType === "pdf" || (isDocx && active.pdf_storage_path)) {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
@@ -157,16 +150,13 @@ documentsRouter.post("/download-zip", requireAuth, async (req, res) => {
   const userId = res.locals.userId as string;
   const userEmail = res.locals.userEmail as string | undefined;
   const { document_ids } = req.body as { document_ids?: string[] };
-
   if (!Array.isArray(document_ids) || document_ids.length === 0)
     return void res.status(400).json({ detail: "document_ids is required" });
-
   const db = createServerSupabase();
   const { data: rawDocs, error } = await db
     .from("documents")
     .select("id, filename, file_type, current_version_id, user_id, project_id")
     .in("id", document_ids);
-
   if (error) return void res.status(500).json({ detail: error.message });
   // Filter to docs the user actually has access to (own + shared-project).
   const accessChecks = await Promise.all(
@@ -185,10 +175,8 @@ documentsRouter.post("/download-zip", requireAuth, async (req, res) => {
     .map((x) => x.doc as { id: string; filename: string });
   if (!docs || docs.length === 0)
     return void res.status(404).json({ detail: "No documents found" });
-
   const JSZip = (await import("jszip")).default;
   const zip = new JSZip();
-
   await Promise.all(
     docs.map(async (doc) => {
       const active = await loadActiveVersion(doc.id, db);
@@ -198,7 +186,6 @@ documentsRouter.post("/download-zip", requireAuth, async (req, res) => {
       zip.file(doc.filename, Buffer.from(raw));
     }),
   );
-
   const content = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
   res.setHeader("Content-Type", "application/zip");
   res.setHeader("Content-Disposition", 'attachment; filename="documents.zip"');
@@ -214,7 +201,6 @@ documentsRouter.get("/:documentId/url", requireAuth, async (req, res) => {
   const { documentId } = req.params;
   const versionIdParam = typeof req.query.version_id === "string" ? req.query.version_id : null;
   const db = createServerSupabase();
-
   const { data: doc, error } = await db
     .from("documents")
     .select("id, filename, user_id, project_id")
@@ -225,11 +211,9 @@ documentsRouter.get("/:documentId/url", requireAuth, async (req, res) => {
   const access = await ensureDocAccess(doc, userId, userEmail, db);
   if (!access.ok)
     return void res.status(404).json({ detail: "Document not found" });
-
   const active = await loadActiveVersion(documentId, db, versionIdParam);
   if (!active)
     return void res.status(404).json({ detail: "No file available" });
-
   const downloadFilename = resolveDownloadFilename(
     doc.filename as string,
     active.display_name,
@@ -242,7 +226,6 @@ documentsRouter.get("/:documentId/url", requireAuth, async (req, res) => {
   );
   if (!url)
     return void res.status(503).json({ detail: "Storage not configured" });
-
   res.json({
     url,
     document_id: documentId,
@@ -265,7 +248,6 @@ documentsRouter.get("/:documentId/docx", requireAuth, async (req, res) => {
   const { documentId } = req.params;
   const versionIdParam = typeof req.query.version_id === "string" ? req.query.version_id : null;
   const db = createServerSupabase();
-
   const { data: doc, error } = await db
     .from("documents")
     .select("id, filename, user_id, project_id")
@@ -276,15 +258,12 @@ documentsRouter.get("/:documentId/docx", requireAuth, async (req, res) => {
   const access = await ensureDocAccess(doc, userId, userEmail, db);
   if (!access.ok)
     return void res.status(404).json({ detail: "Document not found" });
-
   const active = await loadActiveVersion(documentId, db, versionIdParam);
   if (!active)
     return void res.status(404).json({ detail: "No file available" });
-
   const raw = await downloadFile(active.storage_path);
   if (!raw)
     return void res.status(404).json({ detail: "Document bytes not available" });
-
   res.setHeader(
     "Content-Type",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -348,7 +327,6 @@ documentsRouter.get("/:documentId/versions", requireAuth, async (req, res) => {
   const userEmail = res.locals.userEmail as string | undefined;
   const { documentId } = req.params;
   const db = createServerSupabase();
-
   const { data: doc } = await db
     .from("documents")
     .select("id, current_version_id, user_id, project_id")
@@ -359,13 +337,11 @@ documentsRouter.get("/:documentId/versions", requireAuth, async (req, res) => {
   const access = await ensureDocAccess(doc, userId, userEmail, db);
   if (!access.ok)
     return void res.status(404).json({ detail: "Document not found" });
-
   const { data: rows } = await db
     .from("document_versions")
     .select("id, version_number, source, created_at, display_name")
     .eq("document_id", documentId)
     .order("created_at", { ascending: true });
-
   res.json({
     current_version_id: doc.current_version_id,
     versions: rows ?? [],
@@ -385,11 +361,9 @@ documentsRouter.post(
     const userEmail = res.locals.userEmail as string | undefined;
     const { documentId } = req.params;
     const db = createServerSupabase();
-
     const file = req.file;
     if (!file)
       return void res.status(400).json({ detail: "file is required" });
-
     const { data: doc } = await db
       .from("documents")
       .select("id, filename, file_type, user_id, project_id")
@@ -400,7 +374,6 @@ documentsRouter.post(
     const access = await ensureDocAccess(doc, userId, userEmail, db);
     if (!access.ok)
       return void res.status(404).json({ detail: "Document not found" });
-
     // Reject if the uploaded file's extension doesn't match the document's
     // declared type — otherwise every downstream viewer/extractor breaks.
     const suffix = file.originalname.includes(".")
@@ -481,13 +454,11 @@ documentsRouter.post(
       .maybeSingle();
     const nextVersionNumber =
       ((maxRow?.version_number as number | null) ?? 1) + 1;
-
     const defaultDisplayName =
       typeof req.body?.display_name === "string" &&
       req.body.display_name.trim()
         ? req.body.display_name.trim().slice(0, 200)
         : file.originalname;
-
     const { data: versionRow, error: verErr } = await db
       .from("document_versions")
       .insert({
@@ -506,7 +477,6 @@ documentsRouter.post(
         .status(500)
         .json({ detail: "Failed to record new version." });
     }
-
     // Also propagate the user-provided display_name to the parent document's
     // filename so the document's display name stays in sync across the UI.
     // Preserve a sensible extension: if the display_name has none, append
@@ -532,7 +502,6 @@ documentsRouter.post(
       .from("documents")
       .update(documentsUpdate)
       .eq("id", documentId);
-
     res.status(201).json(versionRow);
   },
 );
@@ -548,7 +517,6 @@ documentsRouter.patch(
     const userEmail = res.locals.userEmail as string | undefined;
     const { documentId, versionId } = req.params;
     const db = createServerSupabase();
-
     const { data: doc } = await db
       .from("documents")
       .select("id, user_id, project_id")
@@ -559,11 +527,9 @@ documentsRouter.patch(
     const access = await ensureDocAccess(doc, userId, userEmail, db);
     if (!access.ok)
       return void res.status(404).json({ detail: "Document not found" });
-
     const raw = req.body?.display_name;
     const displayName =
       typeof raw === "string" && raw.trim() ? raw.trim().slice(0, 200) : null;
-
     const { data: updated, error } = await db
       .from("document_versions")
       .update({ display_name: displayName })
@@ -593,7 +559,6 @@ documentsRouter.get(
     const versionIdParam =
       typeof req.query.version_id === "string" ? req.query.version_id : null;
     const db = createServerSupabase();
-
     const { data: doc } = await db
       .from("documents")
       .select("id, user_id, project_id")
@@ -604,17 +569,14 @@ documentsRouter.get(
     const access = await ensureDocAccess(doc, userId, userEmail, db);
     if (!access.ok)
       return void res.status(404).json({ detail: "Document not found" });
-
     const active = await loadActiveVersion(documentId, db, versionIdParam);
     if (!active)
       return void res.status(404).json({ detail: "No file available" });
-
     const raw = await downloadFile(active.storage_path);
     if (!raw)
       return void res
         .status(404)
         .json({ detail: "Document bytes not available" });
-
     const ids = await extractTrackedChangeIds(Buffer.from(raw));
     res.json({ ids });
   },
@@ -631,13 +593,11 @@ async function handleEditResolution(
   const userEmail = res.locals.userEmail as string | undefined;
   const { documentId, editId } = req.params;
   const db = createServerSupabase();
-
   console.log(`[edit-resolution] incoming ${mode}`, {
     userId,
     documentId,
     editId,
   });
-
   const { data: edit, error: editErr } = await db
     .from("document_edits")
     .select("id, document_id, change_id, del_w_id, ins_w_id, status")
@@ -700,7 +660,6 @@ async function handleEditResolution(
   const access = await ensureDocAccess(doc, userId, userEmail, db);
   if (!access.ok)
     return void res.status(404).json({ detail: "Document not found" });
-
   const active = await loadActiveVersion(documentId, db);
   const latestPath = active?.storage_path ?? null;
   console.log(`[edit-resolution] resolved latestPath`, {
@@ -709,14 +668,12 @@ async function handleEditResolution(
   });
   if (!latestPath)
     return void res.status(404).json({ detail: "No file to edit" });
-
   const raw = await downloadFile(latestPath);
   console.log(`[edit-resolution] downloaded bytes`, {
     byteLength: raw?.byteLength ?? 0,
   });
   if (!raw)
     return void res.status(404).json({ detail: "Document bytes not available" });
-
   const wIds = [edit.del_w_id, edit.ins_w_id].filter(
     (v): v is string => typeof v === "string" && v.length > 0,
   );
@@ -779,7 +736,6 @@ async function handleEditResolution(
     ab,
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   );
-
   const { error: statusErr } = await db
     .from("document_edits")
     .update({
@@ -792,14 +748,12 @@ async function handleEditResolution(
     newStatus: mode === "accept" ? "accepted" : "rejected",
     statusErr,
   });
-
   const { count: remainingPending } = await db
     .from("document_edits")
     .select("id", { count: "exact", head: true })
     .eq("document_id", documentId)
     .eq("status", "pending");
   console.log(`[edit-resolution] remaining pending count`, { remainingPending });
-
   const { data: filenameRow } = await db
     .from("documents")
     .select("filename")
@@ -839,7 +793,6 @@ async function handleDocumentUpload(
 ) {
   const file = req.file;
   if (!file) return void res.status(400).json({ detail: "file is required" });
-
   const filename = file.originalname;
   const suffix = filename.includes(".")
     ? filename.split(".").pop()!.toLowerCase()
@@ -850,7 +803,6 @@ async function handleDocumentUpload(
       .json({
         detail: `Unsupported file type: ${suffix}. Allowed: pdf, docx, doc`,
       });
-
   const content = file.buffer;
   const { data: doc, error: insertErr } = await db
     .from("documents")
@@ -868,7 +820,6 @@ async function handleDocumentUpload(
     return void res
       .status(500)
       .json({ detail: "Failed to create document record" });
-
   try {
     const docId = doc.id as string;
     const key = storageKey(userId, docId, filename);
@@ -884,14 +835,12 @@ async function handleDocumentUpload(
       ) as ArrayBuffer,
       contentType,
     );
-
     const rawBuf = content.buffer.slice(
       content.byteOffset,
       content.byteOffset + content.byteLength,
     ) as ArrayBuffer;
     const tree = await extractStructureTree(rawBuf, suffix, filename);
     const pageCount = suffix === "pdf" ? await countPdfPages(rawBuf) : null;
-
     // Convert DOCX/DOC → PDF for display. PDFs are their own rendition.
     let pdfStoragePath: string | null = null;
     if (suffix === "docx" || suffix === "doc") {
@@ -949,7 +898,6 @@ async function handleDocumentUpload(
         updated_at: new Date().toISOString(),
       })
       .eq("id", docId);
-
     const { data: updated } = await db
       .from("documents")
       .select("*")
@@ -1042,3 +990,5 @@ async function extractStructureTree(
     return null;
   }
 }
+
+

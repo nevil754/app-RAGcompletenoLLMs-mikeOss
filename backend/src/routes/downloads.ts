@@ -32,7 +32,6 @@ downloadsRouter.get("/:token", requireAuth, async (req, res) => {
               document_id: string;
           }
         | null = null;
-
     const { data: byStoragePath } = await db
         .from("document_versions")
         .select("id, document_id")
@@ -41,10 +40,8 @@ downloadsRouter.get("/:token", requireAuth, async (req, res) => {
     if (byStoragePath) {
         version = byStoragePath as { id: string; document_id: string };
     }
-
     if (!version)
         return void res.status(404).json({ detail: "File not found" });
-
     const { data: doc } = await db
         .from("documents")
         .select("id, user_id, project_id")
@@ -52,15 +49,12 @@ downloadsRouter.get("/:token", requireAuth, async (req, res) => {
         .single();
     if (!doc)
         return void res.status(404).json({ detail: "File not found" });
-
     const access = await ensureDocAccess(doc, userId, userEmail, db);
     if (!access.ok)
         return void res.status(404).json({ detail: "File not found" });
-
     const raw = await downloadFile(info.path);
     if (!raw)
         return void res.status(404).json({ detail: "File not found" });
-
     res.setHeader("Content-Type", contentTypeFor(info.filename));
     res.setHeader(
         "Content-Disposition",

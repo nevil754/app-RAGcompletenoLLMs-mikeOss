@@ -59,22 +59,18 @@ tabularRouter.get("/", requireAuth, async (req, res) => {
         typeof req.query.project_id === "string" && req.query.project_id
             ? (req.query.project_id as string)
             : null;
-
     // Visible reviews = user's own + reviews in any accessible project.
     const projectIds = await listAccessibleProjectIds(userId, userEmail, db);
-
     if (projectIdFilter && !projectIds.includes(projectIdFilter)) {
         // No access to that project — also covers "project doesn't exist".
         return void res.json([]);
     }
-
     let ownQuery = db
         .from("tabular_reviews")
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
     if (projectIdFilter) ownQuery = ownQuery.eq("project_id", projectIdFilter);
-
     const sharedProjectIds = projectIdFilter ? [projectIdFilter] : projectIds;
     // Three sources to merge:
     //  - own:           reviews this user created
@@ -138,7 +134,6 @@ tabularRouter.get("/", requireAuth, async (req, res) => {
         seen.add(id);
         reviews.push(r as Record<string, unknown>);
     }
-
     // Fetch distinct document counts per review
     const reviewIds = reviews.map((r) => (r as { id: string }).id);
     let docCounts: Record<string, number> = {};
@@ -159,7 +154,6 @@ tabularRouter.get("/", requireAuth, async (req, res) => {
             }
         }
     }
-
     res.json(
         reviews.map((r) => {
             const id = (r as { id: string }).id;
@@ -180,7 +174,6 @@ tabularRouter.post("/", requireAuth, async (req, res) => {
             workflow_id?: string;
             project_id?: string;
         };
-
     const db = createServerSupabase();
     if (project_id) {
         const access = await checkProjectAccess(
@@ -207,7 +200,6 @@ tabularRouter.post("/", requireAuth, async (req, res) => {
         return void res
             .status(500)
             .json({ detail: error?.message ?? "Failed to create review" });
-
     const cells = document_ids.flatMap((docId) =>
         columns_config.map((col) => ({
             review_id: review.id,
@@ -228,7 +220,6 @@ tabularRouter.post("/prompt", requireAuth, async (req, res) => {
         typeof req.body.title === "string" ? req.body.title.trim() : "";
     if (!title)
         return void res.status(400).json({ detail: "title is required" });
-
     const format: string =
         typeof req.body.format === "string" ? req.body.format : "text";
     const documentName: string =
@@ -238,7 +229,6 @@ tabularRouter.post("/prompt", requireAuth, async (req, res) => {
     const tags: string[] = Array.isArray(req.body.tags)
         ? req.body.tags.filter((t: unknown) => typeof t === "string")
         : [];
-
     const formatDescriptions: Record<string, string> = {
         text: "free-form text",
         bulleted_list: "a bulleted list",
@@ -256,7 +246,6 @@ tabularRouter.post("/prompt", requireAuth, async (req, res) => {
             ? `\nAvailable tags: ${tags.join(", ")}`
             : "";
     const docNote = documentName ? `\nDocument type/name: ${documentName}` : "";
-
     const userMessage =
         `Column title: ${title}` +
         docNote +
@@ -265,7 +254,6 @@ tabularRouter.post("/prompt", requireAuth, async (req, res) => {
         `\n\nWrite the best extraction prompt for a legal tabular review column with this title. ` +
         `Do NOT include any instruction about the response format in the prompt — ` +
         `format handling is applied separately and must not be duplicated inside the prompt text.`;
-
     try {
         const { title_model, api_keys } = await getUserModelSettings(userId);
         const raw = await completeText({
@@ -298,7 +286,6 @@ tabularRouter.get("/:reviewId", requireAuth, async (req, res) => {
     const userEmail = res.locals.userEmail as string | undefined;
     const { reviewId } = req.params;
     const db = createServerSupabase();
-
     const { data: review, error } = await db
         .from("tabular_reviews")
         .select("*")
@@ -309,7 +296,6 @@ tabularRouter.get("/:reviewId", requireAuth, async (req, res) => {
     const access = await ensureReviewAccess(review, userId, userEmail, db);
     if (!access.ok)
         return void res.status(404).json({ detail: "Review not found" });
-
     const { data: cells } = await db
         .from("tabular_cells")
         .select("*")
@@ -325,7 +311,6 @@ tabularRouter.get("/:reviewId", requireAuth, async (req, res) => {
                     .eq("project_id", review.project_id)
                     .order("created_at", { ascending: true })
               : { data: [] as Record<string, unknown>[] };
-
     res.json({
         review: { ...review, is_owner: access.isOwner },
         cells: (cells ?? []).map((cell) => ({
@@ -345,7 +330,6 @@ tabularRouter.get("/:reviewId/people", requireAuth, async (req, res) => {
     const userEmail = res.locals.userEmail as string | undefined;
     const { reviewId } = req.params;
     const db = createServerSupabase();
-
     const { data: review } = await db
         .from("tabular_reviews")
         .select("id, user_id, project_id, shared_with")
@@ -356,13 +340,11 @@ tabularRouter.get("/:reviewId/people", requireAuth, async (req, res) => {
     const access = await ensureReviewAccess(review, userId, userEmail, db);
     if (!access.ok)
         return void res.status(404).json({ detail: "Review not found" });
-
     const sharedWith: string[] = (
         Array.isArray(review.shared_with)
             ? (review.shared_with as string[])
             : []
     ).map((e) => (e ?? "").toLowerCase());
-
     // Same pattern as /projects/:id/people: walk auth.users to map emails
     // to user_ids, then pull display_names from user_profiles by user_id.
     const { data: usersData } = await db.auth.admin.listUsers({
@@ -377,17 +359,14 @@ tabularRouter.get("/:reviewId/people", requireAuth, async (req, res) => {
         userByEmail.set(lower, { id: u.id, email: u.email });
         userById.set(u.id, { id: u.id, email: u.email });
     }
-
     const memberUserIds: string[] = [];
     for (const email of sharedWith) {
         const u = userByEmail.get(email);
         if (u) memberUserIds.push(u.id);
     }
-
     const profileIds = [review.user_id as string, ...memberUserIds].filter(
         (x, i, arr) => arr.indexOf(x) === i,
     );
-
     const profileByUserId = new Map<string, string | null>();
     if (profileIds.length > 0) {
         const { data: profiles } = await db
@@ -401,7 +380,6 @@ tabularRouter.get("/:reviewId/people", requireAuth, async (req, res) => {
             );
         }
     }
-
     const ownerInfo = userById.get(review.user_id as string);
     res.json({
         owner: {
@@ -444,7 +422,6 @@ tabularRouter.patch("/:reviewId", requireAuth, async (req, res) => {
         sharedWithUpdate = cleaned;
     }
     updates.updated_at = new Date().toISOString();
-
     const db = createServerSupabase();
     const { data: existingReview, error: reviewError } = await db
         .from("tabular_reviews")
@@ -468,7 +445,6 @@ tabularRouter.patch("/:reviewId", requireAuth, async (req, res) => {
                 .json({ detail: "Only the review owner can change sharing" });
         updates.shared_with = sharedWithUpdate;
     }
-
     const { data: updatedReview, error: updateError } = await db
         .from("tabular_reviews")
         .update(updates)
@@ -479,7 +455,6 @@ tabularRouter.patch("/:reviewId", requireAuth, async (req, res) => {
         return void res.status(500).json({
             detail: updateError?.message ?? "Failed to update review",
         });
-
     if (
         Array.isArray(req.body.columns_config) ||
         Array.isArray(req.body.document_ids)
@@ -493,9 +468,7 @@ tabularRouter.patch("/:reviewId", requireAuth, async (req, res) => {
                 (cell) => `${cell.document_id}:${cell.column_index}`,
             ),
         );
-
         let documentIds: string[];
-
         if (Array.isArray(req.body.document_ids)) {
             // document_ids is the new source of truth — delete removed docs' cells
             const newDocIds = req.body.document_ids as string[];
@@ -505,7 +478,6 @@ tabularRouter.patch("/:reviewId", requireAuth, async (req, res) => {
             const removedDocIds = existingDocIds.filter(
                 (id) => !newDocIds.includes(id),
             );
-
             if (removedDocIds.length > 0) {
                 const { error: deleteError } = await db
                     .from("tabular_cells")
@@ -517,7 +489,6 @@ tabularRouter.patch("/:reviewId", requireAuth, async (req, res) => {
                         .status(500)
                         .json({ detail: deleteError.message });
             }
-
             documentIds = newDocIds;
         } else {
             // No document change — derive from existing cells
@@ -534,7 +505,6 @@ tabularRouter.patch("/:reviewId", requireAuth, async (req, res) => {
                 documentIds = (projectDocs ?? []).map((doc) => doc.id);
             }
         }
-
         const activeColumns = Array.isArray(req.body.columns_config)
             ? req.body.columns_config
             : (updatedReview.columns_config ?? []);
@@ -551,7 +521,6 @@ tabularRouter.patch("/:reviewId", requireAuth, async (req, res) => {
                     status: "pending",
                 })),
         );
-
         if (newCells.length > 0) {
             const { error: insertError } = await db
                 .from("tabular_cells")
@@ -562,7 +531,6 @@ tabularRouter.patch("/:reviewId", requireAuth, async (req, res) => {
                     .json({ detail: insertError.message });
         }
     }
-
     res.json(updatedReview);
 });
 
@@ -588,12 +556,10 @@ tabularRouter.post("/:reviewId/clear-cells", requireAuth, async (req, res) => {
     const userEmail = res.locals.userEmail as string | undefined;
     const { reviewId } = req.params;
     const { document_ids } = req.body as { document_ids?: string[] };
-
     if (!Array.isArray(document_ids) || document_ids.length === 0)
         return void res
             .status(400)
             .json({ detail: "document_ids is required" });
-
     const db = createServerSupabase();
     const { data: review, error: reviewError } = await db
         .from("tabular_reviews")
@@ -605,7 +571,6 @@ tabularRouter.post("/:reviewId/clear-cells", requireAuth, async (req, res) => {
     const access = await ensureReviewAccess(review, userId, userEmail, db);
     if (!access.ok)
         return void res.status(404).json({ detail: "Review not found" });
-
     const { error } = await db
         .from("tabular_cells")
         .update({ content: null, status: "pending" })
@@ -627,12 +592,10 @@ tabularRouter.post(
             document_id: string;
             column_index: number;
         };
-
         if (!document_id || column_index == null)
             return void res
                 .status(400)
                 .json({ detail: "document_id and column_index are required" });
-
         const db = createServerSupabase();
         const { data: review, error: reviewError } = await db
             .from("tabular_reviews")
@@ -644,7 +607,6 @@ tabularRouter.post(
         const access = await ensureReviewAccess(review, userId, userEmail, db);
         if (!access.ok)
             return void res.status(404).json({ detail: "Review not found" });
-
         const column = (
             review.columns_config as {
                 index: number;
@@ -656,7 +618,6 @@ tabularRouter.post(
         ).find((c) => c.index === column_index);
         if (!column)
             return void res.status(400).json({ detail: "Column not found" });
-
         const { data: doc } = await db
             .from("documents")
             .select("id, filename, file_type")
@@ -665,14 +626,12 @@ tabularRouter.post(
         if (!doc)
             return void res.status(404).json({ detail: "Document not found" });
         const docActive = await loadActiveVersion(document_id, db);
-
         await db
             .from("tabular_cells")
             .update({ status: "generating", content: null })
             .eq("review_id", reviewId)
             .eq("document_id", document_id)
             .eq("column_index", column_index);
-
         let markdown = "";
         if (docActive) {
             const buf = await downloadFile(docActive.storage_path);
@@ -690,7 +649,6 @@ tabularRouter.post(
                 }
             }
         }
-
         const { tabular_model, api_keys } = await getUserModelSettings(
             userId,
             db,
@@ -704,7 +662,6 @@ tabularRouter.post(
             column.tags,
             api_keys,
         );
-
         if (!result) {
             await db
                 .from("tabular_cells")
@@ -714,14 +671,12 @@ tabularRouter.post(
                 .eq("column_index", column_index);
             return void res.status(500).json({ detail: "Generation failed" });
         }
-
         await db
             .from("tabular_cells")
             .update({ content: JSON.stringify(result), status: "done" })
             .eq("review_id", reviewId)
             .eq("document_id", document_id)
             .eq("column_index", column_index);
-
         res.json(result);
     },
 );
@@ -732,7 +687,6 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
     const userEmail = res.locals.userEmail as string | undefined;
     const { reviewId } = req.params;
     const db = createServerSupabase();
-
     const { data: review, error: reviewError } = await db
         .from("tabular_reviews")
         .select("*")
@@ -743,7 +697,6 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
     const access = await ensureReviewAccess(review, userId, userEmail, db);
     if (!access.ok)
         return void res.status(404).json({ detail: "Review not found" });
-
     const columns: {
         index: number;
         name: string;
@@ -753,7 +706,6 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
     }[] = review.columns_config ?? [];
     if (columns.length === 0)
         return void res.status(400).json({ detail: "No columns configured" });
-
     const { data: cells } = await db
         .from("tabular_cells")
         .select("*")
@@ -761,7 +713,6 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
     const cellMap = new Map<string, Record<string, unknown>>();
     for (const cell of cells ?? [])
         cellMap.set(`${cell.document_id}:${cell.column_index}`, cell);
-
     const docIds = [...new Set((cells ?? []).map((c) => c.document_id))];
     let docs: Record<string, unknown>[] = [];
     if (docIds.length > 0) {
@@ -778,24 +729,19 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
             .order("created_at", { ascending: true });
         docs = data ?? [];
     }
-
     const { tabular_model, api_keys } = await getUserModelSettings(userId, db);
-
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
-
     const write = (line: string) => res.write(line);
-
     try {
         await Promise.all(
             docs.map(async (doc) => {
                 const docId = doc.id as string;
                 const filename = doc.filename as string;
                 let markdown = "";
-
                 const active = await loadActiveVersion(docId, db);
                 if (active) {
                     const buf = await downloadFile(active.storage_path);
@@ -813,14 +759,12 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
                         }
                     }
                 }
-
                 // Filter to only columns that need processing
                 const columnsToProcess = columns.filter((col) => {
                     const cell = cellMap.get(`${docId}:${col.index}`);
                     return !(cell?.status === "done" && cell?.content);
                 });
                 if (columnsToProcess.length === 0) return;
-
                 // Mark all as generating upfront
                 for (const col of columnsToProcess) {
                     write(
@@ -841,7 +785,6 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
                         });
                     }
                 }
-
                 // Single LLM call for all columns, streaming one JSON line per column
                 const receivedColumns = new Set<number>();
                 try {
@@ -873,7 +816,6 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
                         err,
                     );
                 }
-
                 // Mark any columns the LLM didn't return as error
                 for (const col of columnsToProcess) {
                     if (!receivedColumns.has(col.index)) {
@@ -890,7 +832,6 @@ tabularRouter.post("/:reviewId/generate", requireAuth, async (req, res) => {
                 }
             }),
         );
-
         write("data: [DONE]\n\n");
     } catch (err) {
         console.error("[tabular/generate] stream error", err);
@@ -912,7 +853,6 @@ tabularRouter.get("/:reviewId/chats", requireAuth, async (req, res) => {
     const userEmail = res.locals.userEmail as string | undefined;
     const { reviewId } = req.params;
     const db = createServerSupabase();
-
     // Verify access (owner or shared-project member).
     const { data: review, error } = await db
         .from("tabular_reviews")
@@ -924,7 +864,6 @@ tabularRouter.get("/:reviewId/chats", requireAuth, async (req, res) => {
     const access = await ensureReviewAccess(review, userId, userEmail, db);
     if (!access.ok)
         return void res.status(404).json({ detail: "Review not found" });
-
     // Show every member's chats for the review (collaborative), not just
     // the requester's. Per-chat access is gated above by review access.
     const { data: chats } = await db
@@ -932,7 +871,6 @@ tabularRouter.get("/:reviewId/chats", requireAuth, async (req, res) => {
         .select("id, title, created_at, updated_at, user_id")
         .eq("review_id", reviewId)
         .order("updated_at", { ascending: false });
-
     res.json(chats ?? []);
 });
 
@@ -965,7 +903,6 @@ tabularRouter.get(
         const userEmail = res.locals.userEmail as string | undefined;
         const { reviewId, chatId } = req.params;
         const db = createServerSupabase();
-
         const { data: review } = await db
             .from("tabular_reviews")
             .select("id, user_id, project_id")
@@ -976,7 +913,6 @@ tabularRouter.get(
         const access = await ensureReviewAccess(review, userId, userEmail, db);
         if (!access.ok)
             return void res.status(404).json({ detail: "Review not found" });
-
         const { data: chat, error: chatError } = await db
             .from("tabular_review_chats")
             .select("id, review_id")
@@ -984,13 +920,11 @@ tabularRouter.get(
             .single();
         if (chatError || !chat || chat.review_id !== reviewId)
             return void res.status(404).json({ detail: "Chat not found" });
-
         const { data: messages } = await db
             .from("tabular_review_chat_messages")
             .select("id, role, content, annotations, created_at")
             .eq("chat_id", chatId)
             .order("created_at", { ascending: true });
-
         res.json(messages ?? []);
     },
 );
@@ -1110,7 +1044,6 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
         review_title?: string;
         project_name?: string;
     };
-
     const lastUser = [...(messages ?? [])]
         .reverse()
         .find((m) => m.role === "user");
@@ -1119,7 +1052,6 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
             .status(400)
             .json({ detail: "messages must include a user message" });
     }
-
     const db = createServerSupabase();
     const { data: review, error } = await db
         .from("tabular_reviews")
@@ -1136,13 +1068,11 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
     );
     if (!reviewAccess.ok)
         return void res.status(404).json({ detail: "Review not found" });
-
     // Fetch all cells and documents for this review
     const { data: cells } = await db
         .from("tabular_cells")
         .select("*")
         .eq("review_id", reviewId);
-
     const docIds = [
         ...new Set((cells ?? []).map((c: any) => c.document_id as string)),
     ];
@@ -1155,11 +1085,9 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
             .order("created_at", { ascending: true });
         docs = (data ?? []) as { id: string; filename: string }[];
     }
-
     const sortedColumns = (
         (review.columns_config ?? []) as { index: number; name: string }[]
     ).sort((a, b) => a.index - b.index);
-
     const tabularStore: TabularCellStore = {
         columns: sortedColumns,
         documents: docs,
@@ -1170,13 +1098,11 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
             ]),
         ),
     };
-
     // Create or verify chat record
     let chatId = existingChatId ?? null;
     let chatTitle: string | null = null;
     const isFirstExchange =
         messages.filter((m) => m.role === "user").length === 1;
-
     if (chatId) {
         // Either chat owner OR any project member of the parent review can
         // continue the chat. We've already verified review access above.
@@ -1191,7 +1117,6 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
         if (!canUse || !existing) chatId = null;
         else chatTitle = existing.title;
     }
-
     if (!chatId) {
         const { data: newChat } = await db
             .from("tabular_review_chats")
@@ -1201,7 +1126,6 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
         chatId = newChat?.id ?? null;
         chatTitle = newChat?.title ?? null;
     }
-
     // Persist user message
     if (chatId) {
         await db.from("tabular_review_chat_messages").insert({
@@ -1210,26 +1134,21 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
             content: lastUser.content,
         });
     }
-
     const apiMessages = buildTabularMessages(
         messages,
         tabularStore,
         review.title || "Untitled Review",
     );
-
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
     const write = (line: string) => res.write(line);
-
     if (chatId) {
         write(`data: ${JSON.stringify({ type: "chat_id", chatId })}\n\n`);
     }
-
     const apiKeys = await getUserApiKeys(userId, db);
-
     try {
         const { fullText, events } = await runLLMStream({
             apiMessages,
@@ -1244,9 +1163,7 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
                 extractTabularAnnotations(text, tabularStore),
             apiKeys,
         });
-
         const annotations = extractTabularAnnotations(fullText, tabularStore);
-
         if (chatId) {
             await db.from("tabular_review_chat_messages").insert({
                 chat_id: chatId,
@@ -1259,7 +1176,6 @@ tabularRouter.post("/:reviewId/chat", requireAuth, async (req, res) => {
                 .update({ updated_at: new Date().toISOString() })
                 .eq("id", chatId);
         }
-
         // Generate title on first exchange
         if (chatId && isFirstExchange && !chatTitle && lastUser.content) {
             const { title_model } = await getUserModelSettings(userId, db);
@@ -1355,11 +1271,8 @@ async function queryGemini(
 
     const EXTRACTION_SYSTEM = `You are a legal document analyst. Return ONLY valid JSON:
 {"summary": string, "flag": "green"|"grey"|"yellow"|"red", "reasoning": string}
-
 The "summary" and "reasoning" field values may use markdown formatting (bullets, bold, italics, etc.) — the values are still plain JSON strings (escape newlines as \\n), but the text inside will be rendered as markdown in the UI.
-
 The "summary" field must contain only the extracted value with inline citations — no explanation or reasoning. Every factual claim in "summary" must be followed immediately by a citation in the format [[page:N||quote:exact quoted text]], where N is the page number and the quote is a short verbatim excerpt (≤ 25 words). The quote must be narrowly scoped to the specific claim it supports — extract only the exact words that support that statement, not the surrounding sentence or paragraph. Do not have multiple claims share the same long quote; if two different statements need different evidence, give each its own short, narrowly-scoped quote. All reasoning and explanation belongs in "reasoning" only, which may also contain citations.`;
-
     let raw: string;
     try {
         raw = await completeText({
@@ -1422,7 +1335,6 @@ async function generateChatTitle(
         const contextBlock = contextLines.length
             ? `This chat is in the context of a tabular review.\n${contextLines.join("\n")}\n\n`
             : "";
-
         const raw = await completeText({
             model,
             user: `${contextBlock}Generate a short title (4-6 words) for a chat that starts with the message below. The title should reflect the user's specific question, not the review or project name. Return only the title, no punctuation, no quotes:\n\n${firstUserMessage}`,
@@ -1511,26 +1423,19 @@ async function queryGeminiAllColumns(
             return `Column ${col.index} — "${col.name}": ${fullPrompt}`;
         })
         .join("\n");
-
     const SYSTEM = `You are a legal document analyst. Extract information for each column listed below.
-
 For each column, output exactly one minified JSON object on its own line (no line breaks inside the JSON), then a newline. Process columns in order and output each result as soon as you finish it.
-
 Line format:
 {"column_index": <N>, "summary": <string>, "flag": <"green"|"grey"|"yellow"|"red">, "reasoning": <string>}
-
 Rules:
 - "summary": the extracted value with inline citations [[page:N||quote:verbatim excerpt ≤25 words]] after every factual claim. No explanation or reasoning here. Quotes must be narrowly scoped to the specific claim — extract only the exact supporting words, not the full surrounding sentence. Do not reuse one long quote across multiple statements; give each claim its own short, precise quote.
 - "flag": green = standard/favorable, yellow = needs attention, red = problematic/unfavorable, grey = neutral/not found
 - "reasoning": brief explanation of the extraction
 - The "summary" and "reasoning" string VALUES may use markdown (bullets, bold, italics, etc.) — escape newlines as \\n inside the JSON string. This markdown is rendered in the UI.
 - Output ONLY the JSON lines themselves. Do NOT wrap the response in markdown code fences (e.g. \`\`\`json), and do not add any preamble or summary.`;
-
     const USER = `Document: ${filename}\n\n${documentText.slice(0, 120_000)}\n\n---\nColumns to extract:\n${columnsDesc}`;
-
     let contentBuffer = "";
     const pending: Promise<unknown>[] = [];
-
     const processLine = async (line: string) => {
         const trimmed = line.trim();
         if (!trimmed) return;
@@ -1557,7 +1462,6 @@ Rules:
             // malformed line — skip
         }
     };
-
     try {
         await streamChatWithTools({
             model,
@@ -1583,7 +1487,6 @@ Rules:
     } catch (err) {
         console.error("[queryGeminiAllColumns] stream failed", err);
     }
-
     if (contentBuffer.trim()) pending.push(processLine(contentBuffer));
     await Promise.all(pending);
 }
@@ -1650,3 +1553,5 @@ async function extractDocxMarkdown(buf: ArrayBuffer): Promise<string> {
         return "";
     }
 }
+
+

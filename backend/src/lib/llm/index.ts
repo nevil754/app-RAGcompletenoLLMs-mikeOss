@@ -1,5 +1,6 @@
 import { streamClaude, completeClaudeText } from "./claude";  //ur custom here accanto
 import { streamGemini, completeGeminiText } from "./gemini";  //ur custom here accanto
+import {streamOpenAI, completeOpenAIText} from "./openai";
 import { providerForModel } from "./models";   //ur custom here accanto
 import type { StreamChatParams, StreamChatResult, UserApiKeys } from "./types";  //ur custom here accanto
 
@@ -10,7 +11,8 @@ export async function streamChatWithTools(
     params: StreamChatParams,
 ): Promise<StreamChatResult> {
     const provider = providerForModel(params.model);
-    if (provider === "claude") return streamClaude(params);
+    if (provider === "claude") return streamClaude(params)
+    else if (provider === "openai") return 
     return streamGemini(params);
 }
 

@@ -29,7 +29,6 @@ export async function streamOpenAI(params: StreamChatParams) : Promise<StreamCha
         runTools,
         maxIterations = MAX_ITER,
     } = params;
-
     const llmBase = await get_llm();
     const llm = new ChatOpenAI;
     const lcMessages = toLangChainMessages(inputMessages);  //converted ok

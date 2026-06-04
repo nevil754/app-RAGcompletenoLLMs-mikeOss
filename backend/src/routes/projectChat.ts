@@ -37,9 +37,7 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
             displayed_doc?: { filename: string; document_id: string };
             attached_documents?: { filename: string; document_id: string }[];
         };
-
     const db = createServerSupabase();
-
     // Verify the user has access to the project (owner or shared member).
     const projectAccess = await checkProjectAccess(
         projectId,
@@ -49,10 +47,8 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
     );
     if (!projectAccess.ok)
         return void res.status(404).json({ detail: "Project not found" });
-
     let chatId = chat_id ?? null;
     let chatTitle: string | null = null;
-
     if (chatId) {
         const { data: existing } = await db
             .from("chats")
@@ -63,7 +59,6 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
         if (!canUse) chatId = null;
         else chatTitle = existing!.title;
     }
-
     if (!chatId) {
         const { data: newChat, error } = await db
             .from("chats")
@@ -77,7 +72,6 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
         chatId = newChat.id as string;
         chatTitle = newChat.title;
     }
-
     const lastUser = [...messages].reverse().find((m) => m.role === "user");
     if (lastUser) {
         await db.from("chat_messages").insert({
@@ -88,7 +82,6 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
             workflow: lastUser.workflow ?? null,
         });
     }
-
     const { docIndex, docStore, folderPaths } = await buildProjectDocContext(
         projectId,
         userId,
@@ -99,7 +92,6 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
         filename: info.filename,
         folder_path: folderPaths.get(doc_id),
     }));
-
     const enrichedMessages = await enrichWithPriorEvents(
         messages,
         chatId,
@@ -116,7 +108,6 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
               };
           })
         : enrichedMessages;
-
     // The user-attached docs for this turn (dragged into / picked from
     // the chat input) come in as a request-level field. Surface them in
     // the system prompt with the current-turn doc_id slugs so the model
@@ -135,28 +126,21 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
         });
         systemPromptExtra += `\n\nUSER-ATTACHED DOCUMENTS FOR THIS TURN:\nThe user has attached the following document(s) directly to their latest message. Treat these as the primary focus of the request unless their message clearly says otherwise.\n${lines.join("\n")}`;
     }
-
     const apiMessages = buildMessages(
         messagesForLLM,
         docAvailability,
         systemPromptExtra,
     );
-
     const workflowStore = await buildWorkflowStore(userId, userEmail, db);
-
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
-
     const write = (line: string) => res.write(line);
-
     const apiKeys = await getUserApiKeys(userId, db);
-
     try {
         write(`data: ${JSON.stringify({ type: "chat_id", chatId })}\n\n`);
-
         const { fullText, events } = await runLLMStream({
             apiMessages,
             docStore,
@@ -170,7 +154,6 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
             apiKeys,
             projectId,
         });
-
         const annotations = extractAnnotations(fullText, docIndex, events);
         await db.from("chat_messages").insert({
             chat_id: chatId,
@@ -178,7 +161,6 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
             content: events.length ? events : null,
             annotations: annotations.length ? annotations : null,
         });
-
         if (!chatTitle && lastUser?.content) {
             await db
                 .from("chats")
@@ -199,3 +181,5 @@ projectChatRouter.post("/", requireAuth, async (req, res) => {
         res.end();
     }
 });
+
+

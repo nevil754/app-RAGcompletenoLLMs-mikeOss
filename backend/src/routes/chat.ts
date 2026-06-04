@@ -25,7 +25,6 @@ export const chatRouter = Router();
 chatRouter.get("/", requireAuth, async (req, res) => {
     const userId = res.locals.userId as string;
     const db = createServerSupabase();
-
     const { data: ownProjects, error: projErr } = await db
         .from("projects")
         .select("id")
@@ -34,12 +33,10 @@ chatRouter.get("/", requireAuth, async (req, res) => {
     const ownProjectIds = ((ownProjects ?? []) as { id: string }[]).map(
         (p) => p.id,
     );
-
     const filter =
         ownProjectIds.length > 0
             ? `user_id.eq.${userId},project_id.in.(${ownProjectIds.join(",")})`
             : `user_id.eq.${userId}`;
-
     const { data, error } = await db
         .from("chats")
         .select("*")
@@ -59,7 +56,6 @@ chatRouter.post("/create", requireAuth, async (req, res) => {
         .insert({ user_id: userId, project_id: projectId ?? undefined })
         .select("id")
         .single();
-
     if (error) return void res.status(500).json({ detail: error.message });
     res.json({ id: data.id });
 });
@@ -70,7 +66,6 @@ chatRouter.get("/:chatId", requireAuth, async (req, res) => {
     const userEmail = res.locals.userEmail as string | undefined;
     const { chatId } = req.params;
     const db = createServerSupabase();
-
     const { data: chat, error } = await db
         .from("chats")
         .select("*")
@@ -97,7 +92,6 @@ chatRouter.get("/:chatId", requireAuth, async (req, res) => {
         .select("*")
         .eq("chat_id", chatId)
         .order("created_at", { ascending: true });
-
     const hydrated = await hydrateEditStatuses(messages ?? [], db);
     res.json({ chat, messages: hydrated });
 });
@@ -135,7 +129,6 @@ async function hydrateEditStatuses(
         }
     }
     if (editIds.size === 0 && versionIds.size === 0) return messages;
-
     // Edit status patch.
     const statusById = new Map<string, "pending" | "accepted" | "rejected">();
     if (editIds.size > 0) {
@@ -153,7 +146,6 @@ async function hydrateEditStatuses(
             }
         }
     }
-
     // Version-number patch — old stored events don't carry `version_number`
     // because they predate the schema change. Look it up from
     // document_versions so the UI can render "V3" chips + download filenames.
@@ -170,7 +162,6 @@ async function hydrateEditStatuses(
             versionNumberById.set(r.id, r.version_number ?? null);
         }
     }
-
     const patchAnnList = (list: unknown): unknown => {
         if (!Array.isArray(list)) return list;
         return (list as Record<string, unknown>[]).map((a) => {
@@ -226,7 +217,6 @@ chatRouter.patch("/:chatId", requireAuth, async (req, res) => {
     const title = (req.body.title ?? "").trim();
     if (!title)
         return void res.status(400).json({ detail: "title is required" });
-
     const db = createServerSupabase();
     const { data, error } = await db
         .from("chats")
@@ -235,7 +225,6 @@ chatRouter.patch("/:chatId", requireAuth, async (req, res) => {
         .eq("user_id", userId)
         .select("id, title")
         .single();
-
     if (error || !data)
         return void res.status(404).json({ detail: "Chat not found" });
     res.json(data);
@@ -251,7 +240,6 @@ chatRouter.delete("/:chatId", requireAuth, async (req, res) => {
         .delete()
         .eq("id", chatId)
         .eq("user_id", userId);
-
     if (error) return void res.status(500).json({ detail: error.message });
     res.status(204).send();
 });
@@ -264,14 +252,12 @@ chatRouter.post("/:chatId/generate-title", requireAuth, async (req, res) => {
     const message: string = (req.body.message ?? "").trim();
     if (!message)
         return void res.status(400).json({ detail: "message is required" });
-
     const db = createServerSupabase();
     const { data: chat, error } = await db
         .from("chats")
         .select("id, user_id, project_id")
         .eq("id", chatId)
         .single();
-
     if (error || !chat)
         return void res.status(404).json({ detail: "Chat not found" });
     let canTitle = chat.user_id === userId;
@@ -286,7 +272,6 @@ chatRouter.post("/:chatId/generate-title", requireAuth, async (req, res) => {
     }
     if (!canTitle)
         return void res.status(404).json({ detail: "Chat not found" });
-
     try {
         const { title_model, api_keys } = await getUserModelSettings(
             userId,
@@ -322,7 +307,6 @@ chatRouter.post("/", requireAuth, async (req, res) => {
         project_id?: string;
         model?: string;
     };
-
     console.log("[chat/stream] incoming request", {
         userId,
         chat_id,
@@ -330,12 +314,10 @@ chatRouter.post("/", requireAuth, async (req, res) => {
         model,
         messageCount: messages?.length,
     });
-
     const userEmail = res.locals.userEmail as string | undefined;
     const db = createServerSupabase();
     let chatId = chat_id ?? null;
     let chatTitle: string | null = null;
-
     if (chatId) {
         // Either chat owner OR a member of the chat's project can post.
         const { data: existing } = await db
@@ -356,7 +338,6 @@ chatRouter.post("/", requireAuth, async (req, res) => {
         if (!canUse || !existing) chatId = null;
         else chatTitle = existing.title;
     }
-
     if (!chatId) {
         // If creating a chat tied to a project, the user must have access
         // to the project (own or shared).
@@ -386,9 +367,7 @@ chatRouter.post("/", requireAuth, async (req, res) => {
         chatId = newChat.id as string;
         chatTitle = newChat.title;
     }
-
     console.log("[chat/stream] resolved chatId", chatId);
-
     const lastUser = [...messages].reverse().find((m) => m.role === "user");
     if (lastUser) {
         await db.from("chat_messages").insert({
@@ -399,7 +378,6 @@ chatRouter.post("/", requireAuth, async (req, res) => {
             workflow: lastUser.workflow ?? null,
         });
     }
-
     const { docIndex, docStore } = await buildDocContext(
         messages,
         userId,
@@ -417,28 +395,21 @@ chatRouter.post("/", requireAuth, async (req, res) => {
         docIndex,
     );
     const apiMessages = buildMessages(enrichedMessages, docAvailability);
-
     const workflowStore = await buildWorkflowStore(userId, userEmail, db);
-
     console.log("[chat/stream] starting LLM stream", {
         apiMessageCount: apiMessages.length,
         docCount: Object.keys(docIndex).length,
         workflowCount: Object.keys(workflowStore).length,
     });
-
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
-
     const write = (line: string) => res.write(line);
-
     const apiKeys = await getUserApiKeys(userId, db);
-
     try {
         write(`data: ${JSON.stringify({ type: "chat_id", chatId })}\n\n`);
-
         const { fullText, events } = await runLLMStream({
             apiMessages,
             docStore,
@@ -451,12 +422,10 @@ chatRouter.post("/", requireAuth, async (req, res) => {
             apiKeys,
             projectId: project_id ?? null,
         });
-
         console.log("[chat/stream] LLM stream finished", {
             fullTextLen: fullText?.length ?? 0,
             eventCount: events?.length ?? 0,
         });
-
         const annotations = extractAnnotations(fullText, docIndex, events);
         await db.from("chat_messages").insert({
             chat_id: chatId,
@@ -464,7 +433,6 @@ chatRouter.post("/", requireAuth, async (req, res) => {
             content: events.length ? events : null,
             annotations: annotations.length ? annotations : null,
         });
-
         if (!chatTitle && lastUser?.content) {
             await db
                 .from("chats")
@@ -485,3 +453,5 @@ chatRouter.post("/", requireAuth, async (req, res) => {
         res.end();
     }
 });
+
+
