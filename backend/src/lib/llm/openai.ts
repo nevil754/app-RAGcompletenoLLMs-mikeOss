@@ -7,40 +7,66 @@ import type {
     NormalizedToolResult,
 } from "./types";
 import {toOpenAITools} from "./tools";
-import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import { ChatOpenAI } from "@langchain/openai";
+import { AIMessage, HumanMessage, BaseMessage } from "@langchain/core/messages";
+import { get_llm } from "../../settings";
 
-const RAW_STREAM_LOG_PATH = path.resolve(
-    process.cwd(),
-    "openai-raw-stream.log",
-);
-import {get_llm} from "../../settings";
+const MAX_ITER = 10;
 
-async function fetchLLM() {
-    const llm = await get_llm();
-    return llm;
+function toLangChainMessages(messages: StreamChatParams["messages"]) : BaseMessage[] {
+    return messages.map((m)=>{
+        if (m.role === "user") return new HumanMessage(m.content);
+        return new AIMessage(m.content);
+    });
 }
 
-type ContentBlock =
-    | { type: "text"; text: string }
-    | { type: "tool_use"; id: string; name: string; input: unknown }
-    | { type: string; [key: string]: unknown };
+export async function streamOpenAI(params: StreamChatParams) : Promise<StreamChatResult> {
+    const {
+        messages: inputMessages,
+        systemPrompt,
+        tools = [],
+        callbacks = {},
+        runTools,
+        maxIterations = MAX_ITER,
+    } = params;
 
-type NativeMessage = {
-    role : "user" | "assistant";
-    content: string | ContentBlock[];
+    const llmBase = await get_llm();
+    const llm = new ChatOpenAI;
+    const lcMessages = toLangChainMessages(inputMessages);
+    let fullText = "";
+    for (let i = 0; i<maxIterations; i++){
+        
+
+
+    }
+
+
 };
 
-const MAX_TOKENS = 16384;
 
-export function client(override?: string | null): BaseChatModel {
-    const apikey = override?.trim() || process.env.OPENAI_API_KEY || "";
-    return new BaseChatModel({apiKey});
-};
-
-function toNativeMessages(
-    messages: StreamChatParams["messages"],
-): NativeMessage[] {
-    return messages.map((m) => ({ role:m.role, content:m.content }) );
-}
+//INVECE ORA  con langchain&langgraph è piu easy con best performances (e.g.streaming meno 'granulare')
+//OLD, ispirato a clade.ts, ma il fatto è che con claude devi gestire: content=blocchi strutturati, tool_use esplicito, stream event-driven.
+// const RAW_STREAM_LOG_PATH = path.resolve(
+//     process.cwd(),
+//     "openai-raw-stream.log",
+// );
+// type ContentBlock =
+//     | { type: "text"; text: string }
+//     | { type: "tool_use"; id: string; name: string; input: unknown }
+//     | { type: string; [key: string]: unknown };
+// type NativeMessage = {
+//     role : "user" | "assistant";
+//     content: string | ContentBlock[];
+// };
+// const MAX_TOKENS = 16384;
+// export function client(override?: string | null): BaseChatModel {
+//     const apikey = override?.trim() || process.env.OPENAI_API_KEY || "";
+//     return new BaseChatModel({apiKey});
+// };
+// function toNativeMessages(
+//     messages: StreamChatParams["messages"],
+// ): NativeMessage[] {
+//     return messages.map((m) => ({ role:m.role, content:m.content }) );
+// }
 
 
