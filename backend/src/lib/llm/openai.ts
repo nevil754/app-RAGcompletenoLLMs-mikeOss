@@ -35,11 +35,47 @@ export async function streamOpenAI(params: StreamChatParams) : Promise<StreamCha
     const lcMessages = toLangChainMessages(inputMessages);
     let fullText = "";
     for (let i = 0; i<maxIterations; i++){
-        
+        const res = await llm.invoke([
+            ...(systemPrompt ? [{ role: "system", content: systemPrompt } as any] : []),
+            ...lcMessages,
+        ]);
+        const text = res.content?.toString?.() ?? "";
+        fullText += text;
+        callbacks.onContentDelta?.(text);
+        // TOOL LOOP (semplificato ma compatibile con tuo design)
+        const toolCalls: NormalizedToolCall[] = [];
+        // LangChain tools arrivano in AIMessage.tool_calls (se configurati)
+        const anyRes = res as any;
+        if (anyRes.tool_calls?.length) {
+            for (const t of anyRes.tool_calls) {
+                toolCalls.push({
+                    id: t.id,
+                    name: t.name,
+                    input: t.args ?? {},
+                });
 
-
+                callbacks.onToolCallStart?.(toolCalls.at(-1)!);
+            }
+        }
+        if (!toolCalls.length || !runTools) break;
+        const toolResults = await runTools(toolCalls);
+        // aggiorna history come nel Claude system
+        lcMessages.push(
+            new AIMessage({
+                content: text,
+            }) as any
+        );
+        lcMessages.push(
+            new HumanMessage({
+                content: toolResults.map((r) => ({
+                    type: "tool_result",
+                    tool_use_id: r.tool_use_id,
+                    content: r.content,
+                })),
+            }) as any
+        );
     }
-
+    return {fullText};
 
 };
 
