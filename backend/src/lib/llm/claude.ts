@@ -40,17 +40,24 @@ function client(override?: string | null): Anthropic {
 function toNativeMessages(
     messages: StreamChatParams["messages"],  //estrai solo i mex in un array
 ): NativeMessage[] {
-    return messages.map((m) => ({ role: m.role, content: m.content }));
+    return messages.map((m) => ({ 
+        role: m.role, 
+        content: m.content 
+    }));
 }  //convert messaggi interni in formato Anthropic
 
-export async function streamClaude(
-    params: StreamChatParams,
-): Promise<StreamChatResult> {
+export async function streamClaude( params: StreamChatParams): Promise<StreamChatResult> {
     const {
         model,
         systemPrompt,
         tools = [],
         callbacks = {},
+        //probabilmenete in callbacks ti viene passato qualcosa come 
+        //callbacks?: {
+        //   onContentDelta?: (text: string) => void;
+        //   onReasoningDelta?: (text: string) => void;
+        //   ...
+        //}
         runTools,
         apiKeys,
         enableThinking,
@@ -90,12 +97,12 @@ export async function streamClaude(
             fs.appendFile(RAW_STREAM_LOG_PATH, line + "\n", () => {});  //salva log su file
         });
         stream.on("text", (delta) => {  //quando obj 'stream' cattura evento chiamato 'text' allora runna this
-            callbacks.onContentDelta?.(delta);
+            callbacks.onContentDelta?.(delta);  //onContentDelta ur custom funct dentro callbacks
         });
         if (enableThinking) {
             stream.on("thinking", (delta) => {   //quando obj 'stream' cattura evento chiamato 'thinking' allora runna this
                 sawThinking = true;   //flag a true, serve in row 102
-                callbacks.onReasoningDelta?.(delta);
+                callbacks.onReasoningDelta?.(delta);  //onReasoningDelta ur custom funct dentro callbacks
             });
         }
         const final = await stream.finalMessage();   //aspetta risposta finale completa
