@@ -15,7 +15,7 @@ const RAW_STREAM_LOG_PATH = path.resolve(  //resolve() x concatenare
     "claude-raw-stream.log",
 );
 
-type ContentBlock =
+type ContentBlock =   //viene usato in row 112, const assistantBlocks = final.content as ContentBlock[];  
      { type: "text"; text: string }  
     | { type: "tool_use"; id: string; name: string; input: unknown }
     | { type: string; [key: string]: unknown };
@@ -106,10 +106,9 @@ export async function streamClaude( params: StreamChatParams): Promise<StreamCha
             });
         }
         const final = await stream.finalMessage();   //aspetta risposta finale completa
-        if (sawThinking) callbacks.onReasoningBlockEnd?.();
-        const stopReason = final.stop_reason;
-        const assistantBlocks = final.content as ContentBlock[];
-
+        if (sawThinking) callbacks.onReasoningBlockEnd?.();  //onReasoningBlockEnd ur custom funct dentro callbacks
+        const stopReason = final.stop_reason;  //perche Claude ha finito di rispondere? (e.g. ha finito i token, o ha deciso di smettere, o vuole usare uno strumento...)
+        const assistantBlocks = final.content as ContentBlock[];  
         // Extract text content and tool_use calls from the final assistant
         // message so we can accumulate text and drive the tool-call loop.
         const toolCalls: NormalizedToolCall[] = [];
