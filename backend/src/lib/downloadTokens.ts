@@ -1,5 +1,4 @@
 import crypto from "crypto";  //modulo built-in di Node.js per operazioni crittografiche, come HMAC e hashing
-
 /**
  * HMAC-signed, non-expiring download tokens.
  *

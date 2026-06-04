@@ -2,7 +2,6 @@ import type { createServerSupabase } from "./supabase";
 
 //Questo file è un layer di “data enrichment” sopra Supabase: prende documenti e “attacca” informazioni aggiuntive sulle versioni (storage path, pdf, versioni latest, ecc.).
 
-
 type Supa = ReturnType<typeof createServerSupabase>;  //prende il tipo di ritorno di createServerSupabase
 
 interface DocRow {
@@ -125,7 +124,7 @@ export async function attachActiveVersionPaths<T extends VersionPathRow>(
     return docs;
 }
 
-/**
+/*
  * Given a list of document rows, attach `latest_version_number` — the
  * max `version_number` across all assistant_edit rows for that doc, or
  * null if none. Mutates rows in place and returns the same reference.
@@ -141,14 +140,14 @@ export async function attachLatestVersionNumbers<T extends DocRow>(
         .from("document_versions")
         .select("document_id, version_number")
         .in("document_id", ids)
-        .eq("source", "assistant_edit")
-        .not("version_number", "is", null);
+        .eq("source", "assistant_edit")  //eq() filtra "source" uguale a "assistant_edit"
+        .not("version_number", "is", null);  //not() filtra "version_number" diverso da null
     const latestByDoc = new Map<string, number>();
     for (const r of (rows ?? []) as {
         document_id: string;
         version_number: number | null;
     }[]) {
-        if (r.version_number == null) continue;
+        if (r.version_number == null) continue;  //skip this cycle
         const prev = latestByDoc.get(r.document_id) ?? 0;  //cerca di prendere nel Set, se non trova allora return 0.
         if (r.version_number > prev)
             latestByDoc.set(r.document_id, r.version_number);  //aggiungi nuove key-value pair al Set
