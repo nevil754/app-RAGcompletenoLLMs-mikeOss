@@ -108,12 +108,12 @@ export async function streamClaude( params: StreamChatParams): Promise<StreamCha
         const final = await stream.finalMessage();   //aspetta risposta finale completa
         if (sawThinking) callbacks.onReasoningBlockEnd?.();  //onReasoningBlockEnd ur custom funct dentro callbacks
         const stopReason = final.stop_reason;  //perche Claude ha finito di rispondere? (e.g. ha finito i token, o ha deciso di smettere, o vuole usare uno strumento...)
-        const assistantBlocks = final.content as ContentBlock[];  
+        const assistantBlocks = final.content as ContentBlock[];
         // Extract text content and tool_use calls from the final assistant
         // message so we can accumulate text and drive the tool-call loop.
         const toolCalls: NormalizedToolCall[] = [];
         for (const block of assistantBlocks) {
-            if (block.type === "text") {
+            if(block.type === "text") {
                 const txt = (block as { text: string }).text;
                 if (typeof txt === "string") fullText += txt;
             }   //se il blocco è di tipo 'text' allora aggiunge al fullText
