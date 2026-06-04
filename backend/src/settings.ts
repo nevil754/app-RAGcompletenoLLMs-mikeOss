@@ -1,5 +1,7 @@
 import fs from "fs";
 import yaml from "js-yaml";
+import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import { ChatOpenAI } from "@langchain/openai";
 
 export type AppConfig = any;
 export function loadConfig(): AppConfig {
@@ -13,7 +15,6 @@ if (!OPENAI_API_KEY) {
     console.warn("Warning: OPENAI_API_KEY is not set in environment variables.");
 }
 
-import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 export async function get_llm() : Promise<BaseChatModel> {
     const config = loadConfig();
     const provider = config.llm.provider;
