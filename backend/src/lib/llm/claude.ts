@@ -99,22 +99,29 @@ export async function streamClaude( params: StreamChatParams): Promise<StreamCha
         stream.on("text", (delta) => {  //quando obj 'stream' cattura evento chiamato 'text' allora runna this
             callbacks.onContentDelta?.(delta);  //onContentDelta ur custom funct dentro callbacks
         });
-        if (enableThinking) {
+        if(enableThinking) {
             stream.on("thinking", (delta) => {   //quando obj 'stream' cattura evento chiamato 'thinking' allora runna this
                 sawThinking = true;   //flag a true, serve in row 102
                 callbacks.onReasoningDelta?.(delta);  //onReasoningDelta ur custom funct dentro callbacks
             });
         }
         const final = await stream.finalMessage();   //aspetta risposta finale completa
+        //   final = {
+        //      stop_reason: "tool_use",
+        //      content: [
+        //          { type: "text", text: "Ciao!" },
+        //          { type: "tool_use", id: "123", name: "search", input: {...} }
+        //      ]
+        //    }  //final.content è disponibile SOLO a fine streaming
         if (sawThinking) callbacks.onReasoningBlockEnd?.();  //onReasoningBlockEnd ur custom funct dentro callbacks
         const stopReason = final.stop_reason;  //perche Claude ha finito di rispondere? (e.g. ha finito i token, o ha deciso di smettere, o vuole usare uno strumento...)
-        const assistantBlocks = final.content as ContentBlock[];
+        const assistantBlocks = final.content as ContentBlock[];  //🔥🔥 final.content è risposta finale strutturata del modello (testo + richieste di tool), non un log delle azioni recenti né una cronologia.
         // Extract text content and tool_use calls from the final assistant
         // message so we can accumulate text and drive the tool-call loop.
         const toolCalls: NormalizedToolCall[] = [];
-        for (const block of assistantBlocks) {
+        for(const block of assistantBlocks) {
             if(block.type === "text") {
-                const txt = (block as { text: string }).text;
+                const txt = (block as { text: string }).text;  //get il text all'interno del block
                 if (typeof txt === "string") fullText += txt;
             }   //se il blocco è di tipo 'text' allora aggiunge al fullText
             else if (block.type === "tool_use") {
@@ -128,19 +135,25 @@ export async function streamClaude( params: StreamChatParams): Promise<StreamCha
                     name: tu.name,
                     input: (tu.input as Record<string, unknown>) ?? {},
                 };
-                callbacks.onToolCallStart?.(call);
-                toolCalls.push(call);
+                callbacks.onToolCallStart?.(call);  //onToolCallStart ur custom funct dentro callbacks
+                toolCalls.push(call);   //aggiungilo alla lista
             }  //se il blocco è di tipo 'tool_use' allora lo aggiungo a lista toolCalls
         }
         if (stopReason !== "tool_use" || !toolCalls.length || !runTools) {
             break;
         }
         const results = await runTools(toolCalls);
-
+        //come results è consigliato ottenere qualcosa come 
+        //results = [
+        //   {
+        //     tool_use_id: "abc",
+        //     content: "RAG è una tecnica..."
+        //   }
+        // ]
         //Record the assistant turn (preserving the original content blocks,
         //which Claude requires on the follow-up) and the user turn that
         //carries the tool_result blocks.
-        messages.push({ role: "assistant", content: assistantBlocks });
+        messages.push({ role: "assistant", content: assistantBlocks });  //pushi nei mexs
         messages.push({
             role: "user",
             content: results.map((r) => ({
@@ -148,7 +161,7 @@ export async function streamClaude( params: StreamChatParams): Promise<StreamCha
                 tool_use_id: r.tool_use_id,
                 content: r.content,
             })),
-        });
+        });  //pushi nei mexs, quindi dici qualcosa come “User → ecco i risultati dei tool che mi hai chiesto”
     }
     return { fullText };
 }
@@ -161,14 +174,14 @@ export async function completeClaudeText(params: {
     apiKeys?: { claude?: string | null };
 }): Promise<string> {
     const anthropic = client(params.apiKeys?.claude);
-    const resp = await anthropic.messages.create({
+    const resp = await anthropic.messages.create({   //risposta UNICA (1 risposta) finale, a differente di .stream() che invece invia risposta pezzo per pezzo
         model: params.model,
         max_tokens: params.maxTokens ?? 512,
         system: params.systemPrompt,
         messages: [{ role: "user", content: params.user }],
     });
     const text = resp.content
-        .filter((b): b is Anthropic.TextBlock => b.type === "text")
+        .filter((b): b is Anthropic.TextBlock => b.type === "text")  //tieni solo blocchi di type 'text'
         .map((b) => b.text)
         .join("");
     return text;
@@ -176,3 +189,5 @@ export async function completeClaudeText(params: {
 
 // Helper re-export for callers wanting to hand normalized results back in.
 export type { NormalizedToolResult };
+
+
