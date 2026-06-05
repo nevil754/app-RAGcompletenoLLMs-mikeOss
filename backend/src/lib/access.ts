@@ -144,3 +144,5 @@ export async function listAccessibleProjectIds(
     for (const p of (shared ?? []) as { id: string }[])  ids.add(p.id);  //iterazione sugli elems dell'array usando for...of
     return [...ids];
 }
+
+

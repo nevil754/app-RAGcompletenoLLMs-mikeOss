@@ -1,5 +1,9 @@
 import type { Provider } from "./types";
 
+//⚠️ pero nel code non viene MAI usato OpenRouter(anche se esiste nelle env vars), quindi non posso usare modelli free di OpenRouter, e non ho api keys dirette x Claude o Gemini.   
+//QUINDI IO USO la mia openai key e quindi posso usare solo i modelli openai!
+
+
 // Canonical model IDs
 // Main-chat tier (top-end) — user picks one of these per message.
 export const CLAUDE_MAIN_MODELS = [
@@ -19,7 +23,7 @@ export const OPENAI_MAIN_MODELS = [
 export const CLAUDE_MID_MODELS = ["claude-sonnet-4-6"] as const;
 export const GEMINI_MID_MODELS = ["gemini-3-flash-preview"] as const;
 
-export const OPENAI_MID_MODELS = ["GPT-5 nano"] as const;  //io uso openai!
+export const OPENAI_MID_MODELS = ["gpt-4.1"] as const;  //io uso openai!
 
 // Low-tier (used for title generation, lightweight extractions) — user picks
 // one in account settings.
@@ -49,7 +53,7 @@ const ALL_MODELS = new Set<string>([  //usando Set non puoi avere cloni!!
 export function providerForModel(model: string): Provider {
     if (model.startsWith("claude")) return "claude";
     if (model.startsWith("gemini")) return "gemini";
-    if (model.startsWith("GPT") || model.startsWith("gtp") ) return "openai";  //io uso openai!
+    if (model.startsWith("GPT") || model.startsWith("gpt") ) return "openai";  //io uso openai!
     throw new Error(`Unknown model id: ${model}`);
 }
 
