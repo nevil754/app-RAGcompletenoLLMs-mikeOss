@@ -11,7 +11,7 @@ docx: per creare file .docx
 🔥fast-diff: confronto tra testi x differenze
 fast-xml-parser: leggere xml velocemente
 jszip: per creare/leggere i Zip file
-libreoffice-convert: conversione docs PDF ↔ DOCX ↔ altri formati
+libreoffice-convert: conversione docs PDF ↔ DOCX ↔ altri formati, DEVI INSTALLARE SU PC LibreOffice🔥🔥 !!
 resend: inviare email (login, notifiche, ecc.)
 
 -Nixpacks.toml: durante il deploy dice come costruire ambiente server, nixpacks divide il processo di deploy in setup(installa dipendenze di sistema)->install(installa npm packs)->build(compila il prj)->start(avvia il server).
@@ -32,3 +32,7 @@ e.g.project arriva da supabase e ts lo vede come unknown/any/Record<string, unkn
 e.g.
     const bytes = await response.Body.transformToByteArray();  //transformToByteArray() trasforma in array di bytes, piu facile x js da gestire
     return bytes.buffer as ArrayBuffer;  //ritorna solo la parte di ArrayBuffer dell'oggetto bytes, che è un Uint8Array (un tipo di array di byte), e lo casta come ArrayBuffer
+
+🔥🔥-LibreOffice installato sul pc, x fare upload/conversions di Pdf/.docx
+
+
