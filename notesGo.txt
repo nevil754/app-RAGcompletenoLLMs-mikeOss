@@ -1,5 +1,5 @@
 
-BACKEND fatto in NodeJs, FRONTEND fatto in react
+BACKEND fatto in ExpressJs (NodeJs sotto), FRONTEND fatto in nextjs
 
 -package.json: 
 libreoffice-convert : genera link temp x aws S3
