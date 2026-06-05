@@ -5,10 +5,7 @@ out
 build
 .open-next
 
-.env
-.env.*
-!.env.example
-!.env.local.example
+.env.local
 
 *.log
 *.tsbuildinfo
