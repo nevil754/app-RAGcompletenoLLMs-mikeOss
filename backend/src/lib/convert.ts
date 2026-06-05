@@ -9,7 +9,7 @@ let _convert:  //global var, che inizialmente è null poi diventa la funzione di
 
 async function getConvert() {
   if (!_convert) {  //se è null allora execute this
-    const libre = await import("libreoffice-convert");  //import dinamico dentro condition
+    const libre = await import("libreoffice-convert");  //import dinamico dentro condition, UTILIZZO LIBREOFFICE converter (installabile su pc/server, best x local-hosting)
     _convert = promisify(libre.default.convert.bind(libre.default));  //set
   }
   return _convert;
