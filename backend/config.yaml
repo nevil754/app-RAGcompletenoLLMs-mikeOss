@@ -1,4 +1,4 @@
-//original file di settings x i models è backend/src/lib/llm/models.ts
+#original file di settings x i models è backend/src/lib/llm/models.ts, cmnq questo file lo utilizzo solo in settings.ts
 
 llm:
   provider: "openai"
