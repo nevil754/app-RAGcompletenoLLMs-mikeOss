@@ -88,8 +88,10 @@ export async function streamOpenAI(params: StreamChatParams) : Promise<StreamCha
         );
     }
     return {fullText};
-
 };
+
+
+
 
 
 //INVECE ORA  con langchain&langgraph è piu easy con best performances (e.g.streaming meno 'granulare')
