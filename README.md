@@ -1,3 +1,7 @@
+# My Prj2
+
+Modificato il code originale backend, per utilizzare LangChain&langGraph invece di original imports from differents drivers.
+
 # Mike
 
 demo video complete at https://mikeoss.com/
